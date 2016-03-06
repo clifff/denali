@@ -23,7 +23,29 @@ entry:
     - 100vw
   quality: 90
   client_hints: "Width,DPR"
-entry_list_item:
+index:
+  src: 308
+  srcset:
+    - 308
+    - 363
+    - 603
+    - 336
+    - 251
+    - 672
+    - 502
+    - 758
+    - 422
+    - 844
+    - 355
+    - 710
+    - 900
+  sizes:
+    - "(min-width: 1440px) 355px"
+    - "(min-width: 600px) calc((100vw - 16px)/3)"
+    - calc((100vw - 12px)/2)
+  quality: 50
+  client_hints: "Width,DPR"
+related:
   src: 308
   srcset:
     - 308

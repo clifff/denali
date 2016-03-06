@@ -26,8 +26,8 @@
 <% end %>
 
 <% cache "entries/tagged/#{@tag_slug}/#{@page}/#{@photoblog.id}/#{@photoblog.updated_at.to_i}" do %>
-  <ol class="entry-list">
-    <%= render partial: 'entries/entry_list_item', collection: @entries %>
-  </ol>
+  <div class="entry-list" data-columns>
+    <%= render partial: 'entries/entry_list_item', collection: @entries, locals: { photo_variation: 'index' } %>
+  </div>
   <%= paginate @entries %>
 <% end %>

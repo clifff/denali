@@ -1,10 +1,10 @@
 <% cache "entry/list/#{entry_list_item.id}/#{entry_list_item.updated_at.to_i}" do %>
-  <li class="entry-list__item">
+  <article class="entry-list__item">
     <a class="entry-list__link <%= entry_list_item.is_photo? ? 'entry-list__link--photo' : 'entry-list__link--text' %>" href="<%= entry_list_item.permalink_url %>">
       <% if entry_list_item.is_photo? %>
         <figure class="entry-list__photo">
           <%= responsive_image_tag entry_list_item.photos.first,
-                  'entry_list_item',
+                  photo_variation,
                   { class: 'entry-list__image', alt: entry_list_item.photos.first.caption.blank? ? entry_list_item.title : entry_list_item.photos.first.plain_caption } %>
           <figcaption class="entry-list__photo-caption">
             <p class="entry-list__photo-title"><%= raw truncate(entry_list_item.plain_title, length: 80, separator: ' ', omission: '…', escape: false) %></p>
@@ -47,5 +47,5 @@
         <%= simple_format(truncate(entry_list_item.plain_body, length: 1200, omission: '…')) %>
       <% end %>
     </a>
-  </li>
+  </article>
 <% end %>
