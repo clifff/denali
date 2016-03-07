@@ -36,4 +36,13 @@ module EntriesHelper
     tag[0] = "tag:#{tag[0]},#{date.strftime('%Y-%m-%d')}:"
     tag.join('/')
   end
+
+  def aspect_ratio(entry)
+    padding = if entry.is_photo?
+      (entry.photos.first.height.to_f/entry.photos.first.width.to_f) * 100
+    else
+      100
+    end
+    "style=padding-top:#{padding}%"
+  end
 end
