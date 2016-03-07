@@ -24,47 +24,37 @@ entry:
   quality: 90
   client_hints: "Width,DPR"
 index:
-  src: 308
+  src: 348
   srcset:
-    - 308
-    - 363
-    - 603
-    - 336
-    - 251
-    - 672
-    - 502
-    - 758
-    - 422
-    - 844
-    - 355
-    - 710
-    - 900
+    - 272
+    - 327
+    - 549
+    - 640
+    - 406
+    - 810
+    - 340
+    - 680
   sizes:
-    - "(min-width: 1440px) 355px"
-    - "(min-width: 600px) calc((100vw - 16px)/3)"
-    - calc((100vw - 12px)/2)
+    - "(min-width: 1440px) 340px"
+    - "(min-width: 600px) calc((100vw - 64px)/3)"
+    - calc((100vw - 48px)/2)
   quality: 50
   client_hints: "Width,DPR"
 related:
-  src: 308
+  src: 348
   srcset:
-    - 308
-    - 363
-    - 603
-    - 336
-    - 251
-    - 672
-    - 502
-    - 758
-    - 422
-    - 844
-    - 355
-    - 710
-    - 900
+    - 272
+    - 327
+    - 549
+    - 640
+    - 406
+    - 812
+    - 340
+    - 680
   sizes:
-    - "(min-width: 1440px) 355px"
-    - "(min-width: 600px) calc((100vw - 16px)/3)"
-    - calc((100vw - 12px)/2)
+    - "(min-width: 1440px) 340px"
+    - "(min-width: 600px) calc((100vw - 64px)/3)"
+    - calc((100vw - 48px)/2)
   quality: 50
   square: Yes
 admin_entry:
