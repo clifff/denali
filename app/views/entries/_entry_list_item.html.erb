@@ -1,5 +1,5 @@
-<% cache "entry/list/#{entry_list_item.id}/#{entry_list_item.updated_at.to_i}" do %>
-  <article class="entry-list__item" <%= aspect_ratio(entry_list_item) unless photo_variation == 'related' %>>
+<% cache "entry/list/#{photo_variation}/#{entry_list_item.id}/#{entry_list_item.updated_at.to_i}" do %>
+  <article class="entry-list__item" <%= aspect_ratio(entry_list_item, photo_variation) %>>
     <a class="entry-list__link <%= entry_list_item.is_photo? ? 'entry-list__link--photo' : 'entry-list__link--text' %>" href="<%= entry_list_item.permalink_url %>">
       <% if entry_list_item.is_photo? %>
         <figure class="entry-list__photo">
