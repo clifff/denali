@@ -1,5 +1,5 @@
 entry:
-  src: 640
+  src: 1440
   srcset:
     - 640
     - 960
@@ -24,7 +24,7 @@ entry:
   quality: 90
   client_hints: "Width,DPR"
 index:
-  src: 348
+  src: 640
   srcset:
     - 272
     - 327
