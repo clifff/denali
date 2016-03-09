@@ -25,6 +25,10 @@
       content: '4 .entry-list__column.entry-list__column--quarter';
     }
   }
+
+  &::before {
+    display: none;
+  }
 }
 
 .entry-list--related {
