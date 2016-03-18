@@ -4,23 +4,23 @@
   padding: 0 $column-gutters;
   text-align: center;
 
-  @media (min-width: $bp-m) {
+  @media (min-width: $bp-l) {
     margin: 72px auto;
   }
 
-  @media (max-width: ($bp-s - 1)) {
+  @media (max-width: ($bp-xxs - 1)) {
     @at-root #{&}[data-columns]::before {
       content: '2 .entry-list__column.entry-list__column--half';
     }
   }
 
-  @media (min-width: $bp-s) and (max-width: ($bp-xxl - 1)) {
+  @media (min-width: $bp-xxs) and (max-width: ($bp-xl - 1)) {
     @at-root #{&}[data-columns]::before {
       content: '3 .entry-list__column.entry-list__column--third';
     }
   }
 
-  @media (min-width: $bp-xxl) {
+  @media (min-width: $bp-xl) {
     @at-root #{&}[data-columns]::before {
       content: '4 .entry-list__column.entry-list__column--quarter';
     }
@@ -34,7 +34,7 @@
 .entry-list--related {
   margin-top: 0;
 
-  @media (min-width: $bp-m) {
+  @media (min-width: $bp-s) {
     margin-top: 0;
   }
 }
@@ -98,7 +98,7 @@
 
 .entry-list__item--map {
   @include aspect-ratio(1, 1, '.entry-list__link');
-  font-family: 'kepler-std', 'Times New Roman', serif;
+  font-family: 'kepler-std', 'Georgia', serif;
   margin: 0;
 }
 
@@ -156,7 +156,7 @@
   overflow: hidden;
 
   &:hover .entry-list__photo-caption {
-    @media (min-width: $bp-s) {
+    @media (min-width: $bp-xs) {
       opacity: 1;
     }
   }
@@ -186,22 +186,22 @@
 
 .entry-list__photo-title {
   color: #FFF;
-  font-family: 'kepler-std-display', 'Times New Roman', serif;
+  font-family: 'kepler-std-display', 'Georgia', serif;
   font-weight: 400;
   line-height: 1.2;
   margin: 1.2rem 0;
   text-align: center;
   width: 100%;
 
-  @media (min-width: $bp-s) {
+  @media (min-width: $bp-xs) {
     font-size: 16px;
   }
 
-  @media (min-width: $bp-m) {
+  @media (min-width: $bp-s) {
     font-size: 20px;
   }
 
-  @media (min-width: $bp-l) {
+  @media (min-width: $bp-m) {
     font-size: 24px;
   }
 

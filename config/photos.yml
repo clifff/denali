@@ -39,7 +39,6 @@ index: &index
     - "(min-width: 1440px) 355px"
     - "(min-width: 600px) calc((100vw - 16px)/3)"
     - calc((100vw - 12px)/2)
-  quality: 50
   client_hints: "Width,DPR,Save-Data"
 related:
   <<: *index
@@ -57,7 +56,6 @@ admin_entry:
   sizes:
     - "(min-width: 840px) 800px"
     - calc(100vw - 40px)
-  quality: 60
   client_hints: "Width,DPR,Save-Data"
 admin_edit:
   src: 300
@@ -72,7 +70,6 @@ admin_edit:
   sizes:
     - "(min-width: 800px) 300px"
     - calc(100vw - 60px)
-  quality: 60
   client_hints: "Width,DPR,Save-Data"
 map:
   src: 300
@@ -82,6 +79,5 @@ map:
     - 900
   sizes:
     - 300px
-  quality: 60
   square: Yes
   client_hints: "Save-Data"
