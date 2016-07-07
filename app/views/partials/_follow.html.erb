@@ -18,6 +18,6 @@
     <a href="http://<%= tumblr_url %>" class="follow__link" rel="me" title="Follow on Tumblr"><%= inline_svg 'tumblr', 'follow__icon' %></a>
   <% end %>
   <% if ENV['twitter_username'].present? %>
-    <a href="https://twitter.com/<%= ENV['twitter_username']>" class="follow__link" rel="me" title="Follow on Twitter"><%= inline_svg 'twitter', 'follow__icon' %></a>
+    <a href="https://twitter.com/<%= ENV['twitter_username'] %>" class="follow__link" rel="me" title="Follow on Twitter"><%= inline_svg 'twitter', 'follow__icon' %></a>
   <% end %>
 </div>
