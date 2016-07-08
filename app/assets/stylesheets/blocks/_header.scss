@@ -56,13 +56,6 @@
   order: -1;
   width: 50vw;
 
-  &:hover,
-  &:active {
-    path {
-      fill: $color-links;
-    }
-  }
-
   @media (min-width: $bp-xs) {
     width: 100%;
   }
