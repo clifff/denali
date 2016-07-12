@@ -8,6 +8,7 @@
               alt: photo.caption.blank? ? entry.title : photo.plain_caption,
               'data-width-original': photo.width,
               'data-height-original': photo.height } %>
+          <%= content_tag :p, photo.caption.blank? ? entry.title : photo.plain_caption %>
       </figure>
     <% end %>
 
