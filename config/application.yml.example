@@ -27,6 +27,7 @@ default: &default
   sentry_dsn: abc123
   slack_client_id:
   slack_client_secret:
+  show_captions: true
   tumblr_access_token_secret: abc123
   tumblr_access_token: abc123
   tumblr_consumer_key: abc123
