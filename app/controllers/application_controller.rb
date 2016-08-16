@@ -5,6 +5,7 @@ class ApplicationController < ActionController::Base
 
   before_action :get_photoblog
   before_action :domain_redirect
+  before_action :set_app_version
 
   helper_method :current_user, :logged_in?, :logged_out?, :is_cloudfront?
 
@@ -59,5 +60,26 @@ class ApplicationController < ActionController::Base
 
   def no_cache
     expires_now
+  end
+
+  def set_max_age
+    max_age = ENV['config_default_max_age'].try(:to_i) || 5
+    expires_in max_age.minutes, public: true
+  end
+
+  def set_entry_max_age
+    max_age = ENV['config_entry_max_age'].try(:to_i) || 5
+    expires_in max_age.minutes, public: true
+  end
+
+  def check_if_user_has_visited
+    @has_visited = cookies[:has_visited] == @app_version
+    cookies[:has_visited] = { value: @app_version, expires: 1.year.from_now }
+  end
+
+  def set_app_version
+    # Requires enabling dyno metadata with `heroku labs:enable runtime-dyno-metadata`
+    # See: https://devcenter.heroku.com/articles/dyno-metadata
+    @app_version = ENV['HEROKU_RELEASE_VERSION'] || 'v1'
   end
 end

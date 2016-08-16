@@ -1,8 +1,5 @@
 class ApplicationJob < ActiveJob::Base
   include ActionView::Helpers::TextHelper
-
-  rescue_from Exception do |e|
-    Raven.capture_exception(e)
-    raise e
-  end
+  
+  self.queue_adapter = :resque unless Rails.env.test?
 end

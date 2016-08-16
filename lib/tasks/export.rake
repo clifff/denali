@@ -1,4 +1,4 @@
-task :export => ['export:twitter', 'export:tumblr', 'export:facebook', 'export:flickr', 'export:fivehundredpx', 'export:pinterest']
+task :export => ['export:twitter', 'export:tumblr', 'export:facebook', 'export:flickr', 'export:pinterest']
 
 namespace :export do
   task :twitter => [:environment] do
@@ -47,6 +47,16 @@ namespace :export do
       if entry.present?
         PinterestJob.perform_later(entry)
         puts "Entry \"#{entry.title}\" queued for export to Pinterest."
+      end
+    end
+  end
+
+  task :slack => [:environment] do
+    if ENV['ENTRY_ID'].present?
+      entry = Entry.find(ENV['ENTRY_ID'])
+      if entry.present?
+        SlackIncomingWebhook.post_all(entry)
+        puts "Entry \"#{entry.title}\" queued for export to Slack."
       end
     end
   end

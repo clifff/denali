@@ -26,7 +26,7 @@ gem 'acts_as_list'
 gem 'redcarpet'
 gem 'sanitize'
 gem 'exifr'
-gem 'acts-as-taggable-on', :github => 'mbleigh/acts-as-taggable-on'
+gem 'acts-as-taggable-on', '~> 4.0'
 gem 'httparty'
 gem 'httmultiparty'
 gem 'kaminari'
@@ -35,6 +35,7 @@ gem 'oauth'
 gem 'htmlentities'
 gem 'sentry-raven'
 gem 'cloudfront-invalidator'
+gem 'rmagick'
 
 # Caching
 gem 'dalli'
@@ -51,8 +52,6 @@ gem 'twitter'
 group :production do
   gem 'passenger'
   gem 'pg'
-  gem 'rails_12factor'
-  gem 'newrelic_rpm'
   gem 'lograge'
 end
 

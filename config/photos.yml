@@ -3,22 +3,14 @@ entry: &entry
   srcset:
     - 640
     - 750
-    - 1014
     - 1242
-    - 2048
     - 1536
-    - 1388
-    - 1014
-    - 876
+    - 2048
     - 2732
-    - 1962
-    - 1356
-    - 1278
     - 1280
     - 1440
     - 2560
     - 2880
-    - 2304
   sizes:
     - "(min-width: 1440px) 1440px"
     - 100vw
@@ -30,23 +22,34 @@ entry_list_item:
   src: 355
   srcset:
     - 308
-    - 333
     - 363
     - 603
-    - 336
-    - 251
-    - 672
     - 502
-    - 758
+    - 672
+    - 900
     - 422
     - 844
     - 355
     - 710
-    - 900
   sizes:
     - "(min-width: 1440px) 355px"
     - "(min-width: 600px) calc((100vw - 16px)/3)"
     - calc((100vw - 12px)/2)
+  square: Yes
+entry_pagination:
+  src: 100
+  srcset:
+    - 55
+    - 71
+    - 123
+    - 256
+    - 183
+    - 354
+    - 119
+    - 238
+  sizes:
+    - "(min-width: 960px) 119px"
+    - calc(((100vw - 100px)/7) - 4px)
   square: Yes
 admin_entry:
   src: 560
