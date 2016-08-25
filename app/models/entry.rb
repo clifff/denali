@@ -168,6 +168,7 @@ class Entry < ApplicationRecord
       self.enqueue_tumblr
       self.enqueue_facebook
       self.enqueue_flickr
+      self.enqueue_instagram
       self.enqueue_pinterest
       self.enqueue_slack
     end
@@ -196,6 +197,10 @@ class Entry < ApplicationRecord
 
   def enqueue_pinterest
     PinterestJob.perform_later(self) if self.is_published? && self.is_photo? && self.post_to_pinterest
+  end
+
+  def enqueue_instagram
+    BufferJob.perform_later(self, 'instagram') if self.is_published? && self.is_photo? && self.post_to_instagram
   end
 
   private

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160717144843) do
+ActiveRecord::Schema.define(version: 20160825021404) do
 
   create_table "blogs", force: :cascade do |t|
     t.string   "name"
@@ -47,6 +47,7 @@ ActiveRecord::Schema.define(version: 20160717144843) do
     t.boolean  "show_in_map",       default: true
     t.boolean  "post_to_slack"
     t.boolean  "post_to_pinterest"
+    t.boolean  "post_to_instagram"
     t.index ["blog_id"], name: "index_entries_on_blog_id"
     t.index ["tumblr_id"], name: "index_entries_on_tumblr_id"
     t.index ["user_id"], name: "index_entries_on_user_id"
