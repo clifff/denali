@@ -21,14 +21,14 @@
     <h2>Entry options</h2>
     <%= f.label :show_in_map, class: 'form__label form__label--checkbox' do %><%= f.check_box :show_in_map, { checked: true } %> Show in map<% end %>
     <h2>Sharing options</h2>
-    <%= f.label :post_to_facebook, class: 'form__label form__label--checkbox' do %><%= f.check_box :post_to_facebook, { checked: true } %> Post to Facebook<% end %>
-    <%= f.label :post_to_flickr, class: 'form__label form__label--checkbox' do %><%= f.check_box :post_to_flickr, { checked: true } %> Post to Flickr<% end %>
-    <%= f.label :post_to_instagram, class: 'form__label form__label--checkbox' do %><%= f.check_box :post_to_instagram, { checked: true } %> Post to Instagram<% end %>
-    <%= f.label :post_to_pinterest, class: 'form__label form__label--checkbox' do %><%= f.check_box :post_to_pinterest, { checked: true } %> Post to Pinterest<% end %>
-    <%= f.label :post_to_slack, class: 'form__label form__label--checkbox' do %><%= f.check_box :post_to_slack, { checked: true } %> Post to Slack<% end %>
-    <%= f.label :post_to_tumblr, class: 'form__label form__label--checkbox' do %><%= f.check_box :post_to_tumblr, { checked: true } %> Post to Tumblr<% end %>
+    <%= f.label :post_to_facebook, class: 'form__label form__label--checkbox' do %><%= f.check_box :post_to_facebook, { checked: ENV['buffer_access_token'].present? } %> Post to Facebook<% end %>
+    <%= f.label :post_to_flickr, class: 'form__label form__label--checkbox' do %><%= f.check_box :post_to_flickr, { checked: ENV['flickr_access_token'].present? } %> Post to Flickr<% end %>
+    <%= f.label :post_to_instagram, class: 'form__label form__label--checkbox' do %><%= f.check_box :post_to_instagram, { checked: ENV['buffer_access_token'].present? } %> Post to Instagram<% end %>
+    <%= f.label :post_to_pinterest, class: 'form__label form__label--checkbox' do %><%= f.check_box :post_to_pinterest, { checked: ENV['pinterest_token'].present? } %> Post to Pinterest<% end %>
+    <%= f.label :post_to_slack, class: 'form__label form__label--checkbox' do %><%= f.check_box :post_to_slack, { checked: ENV['slack_client_id'].present? } %> Post to Slack<% end %>
+    <%= f.label :post_to_tumblr, class: 'form__label form__label--checkbox' do %><%= f.check_box :post_to_tumblr, { checked: ENV['tumblr_access_token'].present? } %> Post to Tumblr<% end %>
     <%= f.label :post_to_twitter, class: 'form__label form__label--checkbox' do %>
-      <%= f.check_box :post_to_twitter, { checked: true } %> Post to Twitter
+      <%= f.check_box :post_to_twitter, { checked: ENV['twitter_access_token'].present? } %> Post to Twitter
     <% end %>
     <%= f.text_area :tweet_text, placeholder: 'Your tweet here…', maxlength: 90, class: 'form__input form__input--textarea form__input--short' %>
   </div>
