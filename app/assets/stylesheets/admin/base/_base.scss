@@ -4,9 +4,9 @@
 
 html {
   color: $color-text;
-  font-family: 'proxima-nova', sans-serif;
+  font-family: 'Helvetica Neue', sans-serif;
   font-size: 62.5%;
-  font-weight: 300;
+  font-weight: 400;
 }
 
 a:link,
@@ -23,4 +23,11 @@ a:active {
 
 img {
   max-width: 100%;
+}
+
+.slack-button {
+  display: block;
+  height: 40px;
+  margin: 24px 0;
+  width: 139px;
 }

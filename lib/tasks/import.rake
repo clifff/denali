@@ -27,7 +27,7 @@ namespace :import do
         end
         entry.blog = blog
         entry.user = user
-        entry.save!
+        entry.save
       end
     end
   end

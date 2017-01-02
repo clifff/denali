@@ -1,16 +1,24 @@
 class MapsController < ApplicationController
+  before_action :set_max_age, only: [:index, :photos]
+  before_action :set_entry_max_age, only: [:photo]
+
   layout false
-  before_action :check_if_user_has_visited, only: [:index]
 
   def index
-    expires_in 24.hours, public: true
-    fresh_when @photoblog, public: true
   end
 
   def photos
-    expires_in 24.hours, public: true
-    @entries = @photoblog.entries.mapped
     if stale?(@photoblog, public: true)
+      respond_to do |format|
+        format.json
+      end
+    end
+  end
+
+  def photo
+    @photo = Photo.joins(:entry).where(photos: { id: params[:id] }, entries: { status: 'published' }).limit(1).first
+    raise ActiveRecord::RecordNotFound if @photo.nil?
+    if stale?(@photo, public: true)
       respond_to do |format|
         format.json
       end

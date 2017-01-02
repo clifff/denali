@@ -17,7 +17,9 @@ Denali.LazyLoad = (function () {
       for (i = 0; i < images.length; i++) {
         image = images[i];
         image.style.opacity = 0;
+        image.style.willChange = 'opacity';
         image.addEventListener('load', showImage);
+        image.addEventListener('transitionend', removeHint);
       }
       document.addEventListener('scroll', handleScroll);
       loadImages();
@@ -28,7 +30,9 @@ Denali.LazyLoad = (function () {
       for (i = 0; i < images.length; i++) {
         image = images[i];
         image.style.opacity = 0;
+        image.style.willChange = 'opacity';
         image.addEventListener('load', showImage);
+        image.addEventListener('transitionend', removeHint);
         observer.observe(image);
       }
     }
@@ -90,7 +94,17 @@ Denali.LazyLoad = (function () {
     event.target.style.opacity = 1;
   };
 
+  var removeHint = function (event) {
+    event.target.style.willChange = 'auto';
+  };
+
   return {
     init : init
   };
 })();
+
+if (document.readyState !== 'loading') {
+  Denali.LazyLoad.init();
+} else {
+  document.addEventListener('DOMContentLoaded', Denali.LazyLoad.init);
+}

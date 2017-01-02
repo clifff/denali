@@ -17,10 +17,10 @@ class FlickrJob < ApplicationJob
       body = entry.permalink_url
     end
 
-    tags = entry.tag_list.map { |t| "\"#{t.gsub(/["']/, '')}\"" }.join(' ')
+    all_tags = entry.combined_tag_list.map { |t| "\"#{t.gsub(/["']/, '')}\"" }.join(' ')
 
     entry.photos.each do |p|
-      flickr.upload_photo open(p.original_url).path, title: title, description: body, tags: tags
+      flickr.upload_photo open(p.original_url).path, title: title, description: body, tags: all_tags
     end
   end
 end

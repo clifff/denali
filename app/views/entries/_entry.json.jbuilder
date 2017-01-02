@@ -36,7 +36,8 @@ json.relationships do
           end
           json.(p, :width)
           json.(p, :height)
-          json.(p, :crop)
+          json.(p, :focal_x)
+          json.(p, :focal_y)
           json.(p, :taken_at)
           json.(p, :updated_at)
           json.(p, :created_at)
@@ -54,7 +55,7 @@ json.relationships do
   end
   json.tags do
     json.data do
-      json.array! entry.tags do |t|
+      json.array! entry.combined_tags do |t|
         json.type 'tag'
         json.id t.id.to_s
         json.attributes do

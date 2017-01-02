@@ -1,13 +1,10 @@
 <div class="follow">
   <a href="<%= about_path %>" class="follow__link" title="About <%= @photoblog.name %>"><%= inline_svg 'about', 'follow__icon' %></a>
   <% if ENV['map_enabled'] == true %>
-    <a href="<%= map_path %>" class="follow__link" title="Map"><%= inline_svg 'map', 'follow__icon' %></a>
+    <a href="<%= map_path(trailing_slash: true) %>" class="follow__link" title="Map"><%= inline_svg 'map', 'follow__icon' %></a>
   <% end %>
   <a href="mailto:<%= ENV['site_email'] %>" class="follow__link" title="Contact"><%= inline_svg 'email', 'follow__icon' %></a>
   <a href="<%= simple_feed_path %>" class="follow__link" title="Subscribe to Feed"><%= inline_svg 'feed', 'follow__icon' %></a>
-  <% if ENV['flickr_username'].present? %>
-    <a href="https://www.flickr.com/photos/<%= ENV['flickr_username'] %>" class="follow__link" rel="me" title="Follow on Flickr"><%= inline_svg 'flickr', 'follow__icon' %></a>
-  <% end %>
   <% if instagram_username = ENV['instagram_username'] %>
     <a href="https://www.instagram.com/<%= instagram_username %>/" class="follow__link" rel="me" title="Follow on Instagram"><%= inline_svg 'instagram', 'follow__icon' %></a>
   <% end %>

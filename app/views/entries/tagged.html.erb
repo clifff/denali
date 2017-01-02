@@ -21,20 +21,22 @@
     <meta name="twitter:title" content="<%= sanitize "Entries tagged “#{@tags.first.name}” &middot; #{@photoblog.name}" %>">
     <meta name="twitter:url" content="<%= @page.nil? || @page == 1 ? tag_url(@tags.first.slug) : tag_url(@tags.first.slug, @page) %>">
     <meta name="twitter:description" content="<%= Sanitize.fragment(@photoblog.description) %>">
-    <meta name="twitter:image" content="<%= image_url 'cover.png'  %>">
-    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:card" content="summary">
     <%= auto_discovery_link_tag :atom, tag_url(format: 'atom'), title: "#{@photoblog.name} - Entries tagged “#{@tags.first.name}”" %>
     <link rel="alternate" type="application/vnd.api+json" href="<%= @page == 1 ? tag_url(@tags.first.slug) : tag_url(tag: @tags.first.slug, page: @page) %>" %>
   <% end %>
 <% end %>
 
-<% content_for :inline_css do %>
-  <% cache "entries/styles/#{inline_asset_hash 'entry_list.css'}" do %>
-    <style><%= inline_asset 'entry_list.css' %></style>
-  <% end %>
+<% content_for :stylesheets do %>
+  <%= stylesheet_link_tag 'base', media: 'all' %>
+  <%= stylesheet_link_tag 'components/header', media: 'all' %>
+  <%= stylesheet_link_tag 'components/entry_list', media: 'all' %>
+  <%= stylesheet_link_tag 'components/pagination', media: 'all' %>
+  <%= stylesheet_link_tag 'components/footer', media: 'all' %>
 <% end %>
 
 <% cache "entries/tagged/#{@tag_slug}/#{@page}/#{@photoblog.id}/#{@photoblog.updated_at.to_i}" do %>
+  <%= stylesheet_link_tag 'components/entry_list', media: 'all' %>
   <ol class="entry-list" role="main">
     <%= render partial: 'entries/entry_list_item', collection: @entries, as: :entry, locals: { lazy_load_start_index: 12 } %>
   </ol>

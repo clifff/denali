@@ -35,7 +35,7 @@
     <div class="entry__meta">
       <%= render partial: 'entries/byline', object: entry, as: :entry %>
       <%= render partial: 'entries/exif', object: entry.photos.first, as: :photo if entry.photos.count == 1 %>
-      <%= render partial: 'entries/tags', object: entry.tags unless entry.tags.blank? %>
+      <%= render partial: 'entries/tags', object: entry.combined_tags %>
     </div>
   </article>
 <% end %>

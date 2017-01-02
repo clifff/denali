@@ -9,6 +9,7 @@ class Photo < ApplicationRecord
                       bucket: ENV['s3_bucket'] },
     s3_headers: { 'Cache-Control': 'max-age=31536000, public' },
     s3_region: ENV['s3_region'],
+    s3_protocol: 'http',
     url: ':s3_domain_url',
     path: 'photos/:hash.:extension',
     hash_secret: ENV['secret_key_base'],
@@ -23,6 +24,13 @@ class Photo < ApplicationRecord
   before_create :set_image
   after_image_post_process :save_exif, :save_dimensions
 
+  # Workaround for https://github.com/rails/rails/issues/26726
+  after_save :touch_entry
+
+  def touch_entry
+    self.entry.touch
+  end
+
   def self.oldest
     order('taken_at ASC').limit(1).try(:first)
   end
@@ -35,13 +43,19 @@ class Photo < ApplicationRecord
     self.image.path
   end
 
-  def url(opts)
+  def url(opts = {})
     opts.reverse_merge!(w: 1200, auto: 'format', square: false)
     if opts[:square]
       opts[:h] = opts[:w]
-      opts[:fit] = 'crop'
-      opts[:crop] = self.crop if self.crop.present?
       opts.delete(:square)
+    end
+    if opts[:w].present? && opts[:h].present? && opts[:h] != height_from_width(opts[:w])
+      opts[:fit] = 'crop'
+      if self.focal_x.present? && self.focal_y.present?
+        opts[:crop] = 'focalpoint'
+        opts['fp-x'] = self.focal_x
+        opts['fp-y'] = self.focal_y
+      end
     end
     Ix.path(self.original_path).to_url(opts.reject { |k,v| v.blank? })
   end
@@ -72,6 +86,25 @@ class Photo < ApplicationRecord
 
   def width_from_height(height)
     ((self.width.to_f * height.to_f)/self.height.to_f).round
+  end
+
+  def formatted_camera
+    formatted_make = if self.make =~ /olympus/i
+      'Olympus'
+    elsif self.make =~ /nikon/i
+      'Nikon'
+    elsif self.make =~ /fuji/i
+      'Fujifilm'
+    elsif self.make =~ /canon/i
+      'Canon'
+    else
+      self.make.titlecase
+    end
+    "#{formatted_make} #{self.model.gsub(%r{#{formatted_make}}i, '').strip}"
+  end
+
+  def formatted_film
+    self.film_type.match(self.film_make) ? self.film_type : "#{self.film_make} #{self.film_type}"
   end
 
   private
