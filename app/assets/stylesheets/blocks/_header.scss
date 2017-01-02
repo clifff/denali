@@ -3,7 +3,7 @@
   display: flex;
   flex-flow: column nowrap;
   margin: 24px auto;
-  max-width: $bp-xxl;
+  max-width: $bp-max;
   text-align: center;
   width: 100%;
 
@@ -35,7 +35,6 @@
 .header__tagline {
   color: $color-text-alt;
   font-size: 16px;
-  font-style: italic;
   line-height: 44px;
 
   a:link,

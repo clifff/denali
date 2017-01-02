@@ -63,7 +63,7 @@ module ApplicationHelper
   end
 
   def publish_date_for_queued(entry, format = '%A, %B %-d')
-    days = if Time.now.utc.hour < 17
+    days = if Time.now.utc.hour < 16
       entry.position - 1
     else
       entry.position
@@ -78,9 +78,5 @@ module ApplicationHelper
     else
       Rails.application.assets[filename].to_s.html_safe
     end
-  end
-
-  def inline_asset_hash(filename)
-    Digest::MD5.hexdigest(inline_asset(filename))
   end
 end

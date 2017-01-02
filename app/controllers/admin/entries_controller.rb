@@ -4,8 +4,9 @@ class Admin::EntriesController < AdminController
   before_action :set_entry, only: [:show, :edit, :update, :destroy, :publish, :queue, :draft, :up, :down, :top, :bottom]
   before_action :get_tags, only: [:new, :edit, :create, :update]
   before_action :load_tags, :load_tagged_entries, only: [:tagged]
-  before_action :set_crop_options, only: [:edit, :photo]
   after_action :update_position, only: [:create]
+  after_action :update_equipment_tags, only: [:create, :update]
+  after_action :update_location_tags, only: [:create, :update]
   after_action :enqueue_invalidation, only: [:update]
 
   # GET /admin/entries
@@ -27,6 +28,7 @@ class Admin::EntriesController < AdminController
     @page_title = 'Drafts'
   end
 
+  # GET /admin/entries/tagged/film
   def tagged
     raise ActiveRecord::RecordNotFound if @tags.empty? || @entries.empty?
     @page_title = "Entries tagged \"#{@tag_list.first}\""
@@ -49,6 +51,7 @@ class Admin::EntriesController < AdminController
   # GET /admin/entries/1/edit
   def edit
     @page_title = "Editing “#{@entry.title}”"
+    @max_age = ENV['config_entry_max_age'].try(:to_i) || 5
   end
 
   # PATCH /admin/entries/1/publish
@@ -167,7 +170,7 @@ class Admin::EntriesController < AdminController
     end
 
     def entry_params
-      params.require(:entry).permit(:title, :body, :slug, :status, :tag_list, :post_to_twitter, :post_to_tumblr, :post_to_flickr, :post_to_facebook, :post_to_slack, :post_to_pinterest, :tweet_text, :show_in_map, :invalidate_cloudfront, photos_attributes: [:source_url, :source_file, :id, :_destroy, :position, :caption, :crop])
+      params.require(:entry).permit(:title, :body, :slug, :status, :tag_list, :post_to_twitter, :post_to_tumblr, :post_to_flickr, :post_to_facebook, :post_to_slack, :post_to_pinterest, :tweet_text, :show_in_map, :invalidate_cloudfront, photos_attributes: [:source_url, :source_file, :id, :_destroy, :position, :caption, :focal_x, :focal_y])
     end
 
     def update_position
@@ -197,17 +200,6 @@ class Admin::EntriesController < AdminController
       @entries = @photoblog.entries.includes(:photos).tagged_with(@tag_list, any: true).order('created_at DESC').page(@page)
     end
 
-    def set_crop_options
-      @crop_options = [
-        ['Center', ''],
-        ['Detect faces', 'faces'],
-        ['Top', 'top'],
-        ['Right', 'right'],
-        ['Bottom', 'bottom'],
-        ['Left', 'left']
-      ]
-    end
-
     def respond_to_reposition
       respond_to do |format|
         format.html { redirect_to queued_admin_entries_path }
@@ -224,5 +216,19 @@ class Admin::EntriesController < AdminController
 
     def enqueue_invalidation
       CloudfrontInvalidationJob.perform_later(@entry) if Rails.env.production? && @entry.is_published? && entry_params[:invalidate_cloudfront] == "1"
+    end
+
+    def update_equipment_tags
+      tags = []
+      @entry.photos.each do |p|
+        tags << p.formatted_camera
+        tags << p.formatted_film if p.film_make.present? && p.film_type.present?
+      end
+      @entry.equipment_list = tags
+      @entry.save
+    end
+
+    def update_location_tags
+      ReverseGeocodeJob.perform_later(@entry) if ENV['google_maps_api_key'].present? && @entry.show_in_map?
     end
 end

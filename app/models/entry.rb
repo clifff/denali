@@ -11,7 +11,7 @@ class Entry < ApplicationRecord
   before_save :set_published_date, if: :is_published?
   before_save :set_entry_slug
 
-  acts_as_taggable
+  acts_as_taggable_on :tags, :equipment, :locations
   acts_as_list scope: :blog
 
   accepts_nested_attributes_for :photos, allow_destroy: true, reject_if: lambda { |attributes| attributes['source_file'].blank? && attributes['source_url'].blank? && attributes['id'].blank? }
@@ -31,7 +31,7 @@ class Entry < ApplicationRecord
   end
 
   def self.mapped
-    photo_entries.published.joins(:photos).includes(:photos).where(entries: { show_in_map: true }).where.not(photos: { latitude: nil, longitude: nil })
+    joins(:photos).includes(:photos).where(entries: { show_in_map: true, status: 'published' }).where.not(photos: { latitude: nil, longitude: nil })
   end
 
   def self.text_entries
@@ -98,24 +98,8 @@ class Entry < ApplicationRecord
 
   def related(count = 12)
     earliest_date = (self.published_at || self.created_at) - 2.years
-    Entry.includes(:photos).tagged_with(self.tag_list, any: true, order_by_matching_tag_count: true).where('entries.id != ? AND entries.status = ? AND published_at > ?', self.id, 'published', earliest_date).limit(count)
-  end
-
-  def around(limit = 3)
-    older = Entry.photo_entries.published.where('published_at < ?', self.published_at).where.not(id: self.id).limit(limit * 2).to_a
-    newer = Entry.photo_entries.published('published_at ASC').where('published_at > ?', self.published_at).where.not(id: self.id).limit(limit * 2).to_a
-
-    if older.size < limit
-      newer = newer.shift((limit * 2) - older.size)
-    elsif newer.size < limit
-      older = older.shift((limit * 2) - newer.size)
-    else
-      newer = newer.shift(limit)
-      older = older.shift(limit)
-    end
-
-    newer.reverse!.push(self)
-    newer + older
+    tags = self.tag_list + self.equipment_list + self.location_list
+    Entry.includes(:photos).tagged_with(tags, any: true, order_by_matching_tag_count: true).where('entries.id != ? AND entries.status = ? AND published_at > ?', self.id, 'published', earliest_date).limit(count)
   end
 
   def formatted_body
@@ -130,8 +114,15 @@ class Entry < ApplicationRecord
     markdown_to_plaintext(self.title)
   end
 
-  def formatted_content
-    content = self.title
+  def formatted_content(opts = {})
+    opts.reverse_merge!(link_title: false)
+
+    content = if opts[:link_title]
+      "[#{self.title}](#{self.permalink_url})"
+    else
+      self.title
+    end
+
     content += "\n\n#{self.body}" unless self.body.blank?
     markdown_to_html(content)
   end
@@ -196,6 +187,15 @@ class Entry < ApplicationRecord
 
   def enqueue_pinterest
     PinterestJob.perform_later(self) if self.is_published? && self.is_photo? && self.post_to_pinterest
+  end
+
+  def combined_tags
+    tags = self.tags + self.equipment + self.locations
+    tags.uniq { |t| t.slug }
+  end
+
+  def combined_tag_list
+    self.combined_tags.map(&:name)
   end
 
   private

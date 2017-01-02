@@ -7,7 +7,7 @@ Denali.ImageZoom = (function () {
     images          : '.entry__photo',
     zoomable_class  : 'entry__photo--zoomable',
     zoom_class      : 'entry__photo-container--zoom',
-    max_width       : 1440
+    max_width       : 1680
   };
 
   var zoomable;
@@ -61,3 +61,11 @@ Denali.ImageZoom = (function () {
     handleResize: handleResize
   };
 })();
+
+if (document.readyState !== 'loading') {
+  Denali.ImageZoom.init();
+} else {
+  document.addEventListener('DOMContentLoaded', Denali.ImageZoom.init);
+}
+document.addEventListener('orientationchange', Denali.ImageZoom.init);
+window.addEventListener('resize', Denali.ImageZoom.handleResize);
