@@ -203,6 +203,12 @@ class Entry < ApplicationRecord
     self.combined_tags.map(&:name)
   end
 
+  def combined_tags_as_hashtags
+    list = self.combined_tag_list
+    list_wo_spaces = list.map{ |tag| tag.gsub(/\W+/, '') }
+    list_with_hashtag = list_wo_spaces.map{ |tag| "##{tag}" }
+  end
+
   private
 
   def url_opts(opts)
