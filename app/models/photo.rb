@@ -43,6 +43,10 @@ class Photo < ApplicationRecord
     self.image.path
   end
 
+  def taken_at_formatted
+    taken_at.strftime('(%B %-d, %Y)')
+  end
+
   def url(opts = {})
     opts.reverse_merge!(w: 1200, auto: 'format', square: false)
     if opts[:square]
@@ -133,7 +137,7 @@ class Photo < ApplicationRecord
       self.make = exif.make
       self.model = exif.model
       self.iso = exif.iso_speed_ratings
-      self.taken_at = exif.date_time
+      self.taken_at = exif.date_time_original || exif.date_time
       self.exposure = exif.exposure_time
       self.f_number = exif.try(:f_number).try(:to_f)
       self.focal_length = exif.try(:focal_length).try(:to_i)

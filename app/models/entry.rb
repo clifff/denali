@@ -102,12 +102,24 @@ class Entry < ApplicationRecord
     Entry.includes(:photos).tagged_with(tags, any: true, order_by_matching_tag_count: true).where('entries.id != ? AND entries.status = ? AND published_at > ?', self.id, 'published', earliest_date).limit(count)
   end
 
+  def body_contains_publish_date?
+    self.body.strip.index(/\(\w+ \d+, \d{4}\)/)
+  end
+
   def formatted_body
-    markdown_to_html(self.body)
+    if self.is_photo? && !self.body_contains_publish_date?
+      markdown_to_html(self.body + ' ' + self.photos.first.taken_at_formatted)
+    else
+      markdown_to_html(self.body)
+    end
   end
 
   def plain_body
-    markdown_to_plaintext(self.body)
+    if self.is_photo? && !self.body_contains_publish_date?
+      markdown_to_plaintext(self.body + ' ' + self.photos.first.taken_at_formatted)
+    else
+      markdown_to_plaintext(self.body)
+    end
   end
 
   def plain_title

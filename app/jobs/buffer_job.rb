@@ -18,7 +18,7 @@ class BufferJob < ApplicationJob
   end
 
   def build_text(entry)
-    "#{entry.body} #{entry.combined_tags_as_hashtags.join(' ')}"
+    "#{entry.plain_body} #{entry.combined_tags_as_hashtags.join(' ')}"
   end
 
   def build_media(entry)
