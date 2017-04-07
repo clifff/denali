@@ -44,7 +44,11 @@ class Photo < ApplicationRecord
   end
 
   def taken_at_formatted
-    taken_at.strftime('(%B %-d, %Y)')
+    if taken_at.present?
+      taken_at.strftime('(%B %-d, %Y)')
+    else
+      ''
+    end
   end
 
   def url(opts = {})
