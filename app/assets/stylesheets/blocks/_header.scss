@@ -55,13 +55,6 @@
   order: -1;
   width: 50vw;
 
-  &:hover,
-  &:active {
-    path {
-      fill: $color-links;
-    }
-  }
-
   @media (min-width: $bp-xs) {
     width: 100%;
   }
@@ -70,5 +63,11 @@
     margin: 0 auto;
     order: inherit;
     padding: 0 20px;
+  }
+}
+
+.header__icon {
+  path {
+    transition: fill 150ms ease-in-out;
   }
 }
