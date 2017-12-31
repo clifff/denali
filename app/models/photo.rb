@@ -98,7 +98,7 @@ class Photo < ApplicationRecord
     elsif self.make =~ /canon/i
       'Canon'
     else
-      self.make.titlecase
+      self.make&.titlecase
     end
   end
 
@@ -106,7 +106,7 @@ class Photo < ApplicationRecord
     if self.model =~ /iphone/i
       self.model
     else
-      "#{self.formatted_make} #{self.model.gsub(%r{#{formatted_make}}i, '').strip}"
+      "#{self.formatted_make} #{self.model&.gsub(%r{#{formatted_make}}i, '')&.strip}"
     end
   end
 
