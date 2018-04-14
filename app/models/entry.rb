@@ -1,4 +1,6 @@
+require 'elasticsearch/model'
 class Entry < ApplicationRecord
+  include Elasticsearch::Model
   include Rails.application.routes.url_helpers
   include Formattable
 
@@ -12,12 +14,30 @@ class Entry < ApplicationRecord
   before_save :set_entry_slug
   before_create :set_preview_hash
 
-  acts_as_taggable_on :tags, :equipment, :locations
+  acts_as_taggable_on :tags, :equipment, :locations, :styles
   acts_as_list scope: :blog
 
   accepts_nested_attributes_for :photos, allow_destroy: true, reject_if: lambda { |attributes| attributes['source_file'].blank? && attributes['source_url'].blank? && attributes['id'].blank? }
 
   attr_accessor :invalidate_cloudfront
+
+  settings index: { number_of_shards: 1 }
+
+  after_commit on: [:create] do
+    ElasticsearchJob.perform_later(self, 'create')
+  end
+
+  after_commit on: [:update] do
+    ElasticsearchJob.perform_later(self, 'update')
+  end
+
+  after_commit on: [:destroy] do
+    ElasticsearchJob.perform_later(self, 'destroy')
+  end
+
+  def as_indexed_json(opts = nil)
+    self.as_json(only: [:photos_count, :status, :published_at, :created_at, :blog_id, :id], methods: [:plain_body, :plain_title, :es_tags, :es_locations, :es_equipment, :es_captions, :es_styles, :es_keywords])
+  end
 
   def self.published(order = 'published_at DESC')
     where(status: 'published').order(order)
@@ -43,6 +63,46 @@ class Entry < ApplicationRecord
     where('photos_count > 0')
   end
 
+  def self.full_search(query, page = 1, per_page = 10)
+    search = {
+      query: {
+        bool: {
+          must: [
+            { query_string: { query: query, default_operator: 'AND' } }
+          ]
+        }
+      },
+      sort: [
+        { created_at: 'desc' },
+        '_score'
+      ],
+      size: per_page,
+      from: (page.to_i - 1) * per_page
+    }
+    self.search(search)
+  end
+
+  def self.published_search(query, page = 1, per_page = 10)
+    search = {
+      query: {
+        bool: {
+          must: [
+            { term: { status: 'published' } },
+            { range: { photos_count: { gt: 0 } } },
+            { multi_match: { query: query, fields: ['plain_*', 'es_*'], type: 'cross_fields', operator: 'and' } }
+          ]
+        }
+      },
+      sort: [
+        { published_at: 'desc' },
+        '_score'
+      ],
+      size: per_page,
+      from: (page.to_i - 1) * per_page
+    }
+    self.search(search)
+  end
+
   def is_photo?
     !self.photos_count.blank? && self.photos_count > 0
   end
@@ -53,6 +113,10 @@ class Entry < ApplicationRecord
 
   def is_text?
     self.photos_count.blank? || self.photos_count == 0
+  end
+
+  def is_single_photo?
+    !self.photos_count.blank? && self.photos_count == 1
   end
 
   def is_queued?
@@ -70,7 +134,7 @@ class Entry < ApplicationRecord
   def publish
     self.remove_from_list
     self.status = 'published'
-    self.save && self.enqueue_jobs
+    self.save && self.enqueue_sharing_jobs
   end
 
   def queue
@@ -90,17 +154,69 @@ class Entry < ApplicationRecord
   end
 
   def newer
-    Entry.published('published_at ASC').where('published_at > ?', self.published_at).where.not(id: self.id).limit(1).first
+    date = self.published_at || self.publish_date_for_queued
+    Entry.published('published_at ASC').where('published_at > ?', date).where.not(id: self.id).limit(1).first
   end
 
   def older
-    Entry.published.where('published_at < ?', self.published_at).where.not(id: self.id).limit(1).first
+    date = self.published_at || self.publish_date_for_queued
+    Entry.published.where('published_at < ?', date).where.not(id: self.id).limit(1).first
+  end
+
+  def publish_date_for_queued
+    days = if Time.now.utc.hour < 12
+      self.position - 1
+    else
+      self.position
+    end
+    Time.now + days.days
   end
 
   def related(count = 12)
-    earliest_date = (self.published_at || self.created_at) - 2.years
-    tags = self.tag_list + self.equipment_list + self.location_list
-    Entry.includes(:photos).photo_entries.tagged_with(tags, any: true, order_by_matching_tag_count: true).where('entries.id != ? AND entries.status = ? AND published_at > ?', self.id, 'published', earliest_date).limit(count)
+    start_date = if self.is_published?
+      self.published_at.beginning_of_day - 1.year
+    elsif self.is_queued?
+      self.publish_date_for_queued.beginning_of_day - 1.year
+    else
+      self.created_at.beginning_of_day - 1.year
+    end
+
+    end_date = if self.is_published?
+      self.published_at.end_of_day + 1.year
+    elsif self.is_queued?
+      self.publish_date_for_queued.end_of_day + 1.year
+    else
+      self.created_at.end_of_day + 1.year
+    end
+
+    begin
+      search = {
+        query: {
+          bool: {
+            must: [
+              { term: { blog_id: self.blog_id } },
+              { term: { status: 'published' } },
+              { range: { photos_count: { gt: 0 } } },
+              { range: { published_at: { gte: start_date, lte: end_date } } }
+            ],
+            must_not: {
+              term: { id: self.id }
+            },
+            should: [
+              { match: { es_tags: { query: self.es_tags } } },
+              { match: { es_locations: { query: self.es_locations } } },
+              { match: { es_styles: { query: self.es_styles } } }
+            ],
+            minimum_should_match: 1
+          }
+        },
+        size: count
+      }
+      Entry.search(search).records.includes(:photos)
+    rescue => e
+      logger.error "Fetching related entries failed with the following error: #{e}"
+      nil
+    end
   end
 
   def formatted_body
@@ -118,7 +234,9 @@ class Entry < ApplicationRecord
   def formatted_content(opts = {})
     opts.reverse_merge!(link_title: false)
 
-    content = if opts[:link_title]
+    content = if opts[:link_title] && opts[:utm].present?
+      "[#{self.title}](#{self.permalink_url(opts[:utm])})"
+    elsif opts[:link_title]
       "[#{self.title}](#{self.permalink_url})"
     else
       self.title
@@ -154,64 +272,129 @@ class Entry < ApplicationRecord
     entry_url(self.id, url_opts(opts))
   end
 
-  def enqueue_jobs
-    unless Rails.env.development?
-      self.enqueue_twitter
-      self.enqueue_tumblr
-      self.enqueue_facebook
-      self.enqueue_flickr
-      self.enqueue_instagram
-      self.enqueue_pinterest
-      self.enqueue_slack
-    end
+  def enqueue_sharing_jobs
+    TwitterJob.perform_later(self) if self.post_to_twitter
+    TumblrJob.perform_later(self) if self.post_to_tumblr
+    FacebookJob.perform_later(self) if self.post_to_facebook
+    FlickrJob.perform_later(self) if self.post_to_flickr
+    InstagramJob.perform_later(self) if self.post_to_instagram
+    PinterestJob.perform_later(self) if self.post_to_pinterest
+    self.enqueue_slack
     true
   end
 
-  def enqueue_twitter
-    TwitterJob.perform_later(self)  if self.is_published? && self.is_photo? && self.post_to_twitter
-  end
-
-  def enqueue_tumblr
-    TumblrJob.perform_later(self) if self.is_published? && self.is_photo? && self.post_to_tumblr
-  end
-
-  def enqueue_facebook
-    FacebookJob.perform_later(self) if self.is_published? && self.is_photo? && self.post_to_facebook
-  end
-
-  def enqueue_instagram
-    InstagramJob.perform_later(self) if self.is_published? && self.is_photo? && self.post_to_instagram
-  end
-
-  def enqueue_flickr
-    FlickrJob.perform_later(self) if self.is_published? && self.is_photo? && self.post_to_flickr
-  end
-
   def enqueue_slack
-    if self.is_published? && self.is_photo?
-      attachment = {
-        fallback: "#{self.plain_title} #{self.permalink_url}",
-        title: self.plain_title,
-        title_link: self.permalink_url,
-        image_url: self.photos.first.url(w: 800),
-        color: '#BF0222'
-      }
-      attachment[:text] = self.plain_body if self.body.present?
-      SlackJob.perform_later('', attachment)
-    end
-  end
-
-  def enqueue_pinterest
-    PinterestJob.perform_later(self) if self.is_published? && self.is_photo? && self.post_to_pinterest
+    attachment = {
+      fallback: "#{self.plain_title} #{self.permalink_url}",
+      title: self.plain_title,
+      title_link: self.permalink_url
+    }
+    attachment[:image_url] = self.photos.first.url(w: 800) if self.is_photo?
+    attachment[:color] = '#BF0222'
+    SlackJob.perform_later(attachments: [attachment])
   end
 
   def combined_tags
-    tags = self.tags + self.equipment + self.locations
+    tags = self.tags + self.equipment + self.locations + self.styles
     tags.uniq { |t| t.slug }
   end
 
   def combined_tag_list
     self.combined_tags.map(&:name)
+  end
+
+  def es_tags
+    self.tag_list.join(' ')
+  end
+
+  def es_locations
+    self.location_list.join(' ')
+  end
+
+  def es_equipment
+    self.equipment_list.join(' ')
+  end
+
+  def es_styles
+    self.style_list.join(' ')
+  end
+
+  def es_captions
+    self.photos.map { |p| p.plain_caption }.reject(&:blank?).join(' ')
+  end
+
+  def es_keywords
+    self.photos.map { |p| p.keywords }.reject(&:blank?).join(', ')
+  end
+
+  def instagram_hashtags(count = 30)
+    entry_tags = self.combined_tags.map { |t| t.slug.gsub(/-/, '') }
+    instagram_hashtags = YAML.load_file(Rails.root.join('config/hashtags.yml'))['instagram']
+
+    tags = []
+    extra_tags = []
+
+    # Build an array with 5 random Instagram tags for each entry tag
+    instagram_hashtags.each do |k, v|
+      if entry_tags.include? k
+        tags << instagram_hashtags[k].sample(5)
+      end
+    end
+    tags << instagram_hashtags['magazines'].sample(5)
+
+    # We may have room for more Instagram tags, so build a second array with
+    # every Instagram tag that matches this entry.
+    if tags.uniq.size < count
+      instagram_hashtags.each do |k, v|
+        if entry_tags.include? k
+          extra_tags << instagram_hashtags[k]
+        end
+      end
+      extra_tags << instagram_hashtags['magazines']
+    end
+
+    # Add them up, remove the duplicates, and grab the first `count`.
+    # That way we end up with `count` Instagram hashtags, guaranteeing there are
+    # at least a few of each matching tag.
+    instagram_tags = tags.flatten.shuffle + extra_tags.flatten.shuffle
+    instagram_tags.uniq[0, count].shuffle.map { |t| "##{t}"}.join(' ')
+  end
+
+  def instagram_caption
+    text = []
+    if self.instagram_text.present?
+      text << self.instagram_text
+    else
+      text << self.plain_title
+      text << self.plain_body
+    end
+    text << self.instagram_hashtags
+    text.reject(&:blank?).join("\n\n")
+  end
+
+  def update_tags
+    equipment_tags = []
+    location_tags = []
+    style_tags = []
+    self.photos.each do |p|
+      equipment_tags << [p.formatted_make, p.formatted_camera, p.formatted_film]
+      style_tags << (p.color? ? "Color" : "Black and White") unless p.color?.nil?
+      location_tags  << [p.country, p.locality, p.sublocality, p.neighborhood, p.administrative_area] if self.show_in_map?
+    end
+    equipment_tags = equipment_tags.flatten.uniq.reject(&:blank?)
+    location_tags = location_tags.flatten.uniq.reject(&:blank?)
+    style_tags = style_tags.flatten.uniq.reject(&:blank?)
+    self.equipment_list = equipment_tags
+    self.location_list = location_tags
+    self.style_list = style_tags
+    self.tag_list.remove(equipment_tags + location_tags + ['Color', 'Black and White'])
+    self.save!
+  end
+
+  def add_tags(new_tags)
+    self.tag_list.add(new_tags, parse: true)
+    self.tag_list.remove(self.equipment_list + self.location_list + ['Color', 'Black and White'])
+    self.save!
   end
 
   private
@@ -227,7 +410,9 @@ class Entry < ApplicationRecord
 
   def set_published_date
     if self.is_published? && self.published_at.nil?
-      self.published_at = Time.now
+      time = Time.now
+      self.published_at = time
+      self.modified_at  = time
     end
   end
 

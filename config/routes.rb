@@ -1,17 +1,24 @@
 Rails.application.routes.draw do
 
   concern :paginatable do
-    get '(page/:page)', :action => :index, :on => :collection, :as => ''
+    get '(page/:page)', :action => :index, :on => :collection
+    get 'queued(/page/:page)', :action => :queued, :on => :collection
+    get 'drafts(/page/:page)', :action => :drafts, :on => :collection
   end
 
   namespace :admin do
-    get '/tagged/:tag(/page/:page)'   => 'entries#tagged', constraints: { page: /\d+/ }, :as => 'tagged_entries'
+    get '/entries/tagged/:tag(/page/:page)'     => 'entries#tagged', constraints: { page: /\d+/ }, :as => 'tagged_entries'
+    get '/entries/search'             => 'entries#search', :as => :search
+    get '/entries/edit'               => 'entries#edit'
+    get '/entries/share'              => 'entries#share'
     get 'settings'                    => 'blogs#edit'
     patch 'settings/update'           => 'blogs#update'
 
     resources :entries, only: [:index, :new, :create, :edit, :update, :destroy], concerns: :paginatable do
       member do
-        get 'delete'
+        get 'more'
+        get 'share'
+        post 'resize_photos'
         patch 'publish'
         patch 'queue'
         patch 'draft'
@@ -19,6 +26,13 @@ Rails.application.routes.draw do
         post 'down'
         post 'top'
         post 'bottom'
+        post 'instagram'
+        post 'twitter'
+        post 'facebook'
+        post 'geotag'
+        post 'invalidate'
+        post 'annotate'
+        post 'palette'
       end
       collection do
         get 'queued'
@@ -27,31 +41,40 @@ Rails.application.routes.draw do
       end
     end
 
-    resources :tags, only: [:index, :destroy], concerns: :paginatable
+    resources :tags, only: [:index, :destroy, :show, :update], concerns: :paginatable do
+      member do
+        post 'add'
+      end
+    end
   end
 
 
   get '/(page/:page)'                  => 'entries#index',   constraints: { page: /\d+/ }, defaults: { format: 'html' }, :as => :entries
-  get '/count/:count'                  => 'entries#index',   constraints: { count: /\d+/ }, defaults: { format: 'html' }
   get '/tagged/:tag(/page/:page)'      => 'entries#tagged',  constraints: { page: /\d+/ }, defaults: { format: 'html' }, :as => :tag
-  get '/tagged/:tag(/count/:count)'    => 'entries#tagged',  constraints: { count: /\d+/ }, defaults: { format: 'html' }
   get '/e/:id'                         => 'entries#show',    constraints: { id: /\d+/ }, :as => :entry
+  get '/photo/:id'                     => 'entries#photo',   constraints: { id: /\d+/ }, :as => :photo
   get '/:year/:month/:day/:id(/:slug)' => 'entries#show',    constraints: { id: /\d+/, year: /\d{1,4}/, month: /\d{1,2}/, day: /\d{1,2}/ }, defaults: { format: 'html' }, :as => :entry_long
   get '/preview/:preview_hash'         => 'entries#preview', defaults: { format: 'html' }, :as => :preview_entry
+  get '/search'                        => 'entries#search', :as => :search
   get '/map'                           => 'maps#index', :as => :map
-  get '/map/photos.:format'            => 'maps#photos'
+  get '/map/photos.:format'            => 'maps#photos', :as => :map_markers
   get '/map/photo/:id.:format'         => 'maps#photo'
-  get '/sitemap.:format'               => 'entries#sitemap', defaults: { format: 'xml' }, :as => :sitemap
   get '/about'                         => 'blogs#about', :as => :about
+  get '/manifest.json'                 => 'blogs#manifest', :as => :app_manifest
   get '/oembed'                        => 'oembed#show', :as => :oembed
 
-  # Redirects
+  # Sitemaps
+  get '/sitemap.:format'               => 'entries#sitemap_index', defaults: { format: 'xml' }, :as => :sitemap_index
+  get '/sitemap/:page.:format'         => 'entries#sitemap', defaults: { format: 'xml' }, :as => :sitemap
+
+  # Legacy routes & redirects
   get '/post/:tumblr_id(/:slug)'       => 'entries#tumblr', constraints: { tumblr_id: /\d+/ }
+  get '/archive(/:year)(/:month)',     to: redirect('/')
+  get '/rss',                          to: redirect('/feed.atom')
 
   # Feeds
-  get '/feed'                          => 'entries#index', defaults: { format: 'atom' }, :as => :simple_feed
-  get '/rss'                           => 'entries#index', defaults: { format: 'atom' }
-  get '/atom'                          => 'entries#index', defaults: { format: 'atom' }
+  get '(/page/:page)/feed(.:format)'             => 'entries#feed', constraints: { page: /\d+/ }, defaults: { format: 'atom' }, :as => :feed
+  get '/tagged/:tag(/page/:page)/feed(.:format)' => 'entries#tag_feed', constraints: { page: /\d+/ }, defaults: { format: 'atom' }, :as => :tag_feed
 
   # Admin
   get '/admin'                         => 'admin#index',      :as => :admin

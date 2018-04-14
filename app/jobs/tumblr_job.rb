@@ -2,6 +2,7 @@ class TumblrJob < ApplicationJob
   queue_as :default
 
   def perform(entry)
+    return if !entry.is_published? || !Rails.env.production?
     tumblr = Tumblr::Client.new({
       consumer_key: ENV['tumblr_consumer_key'],
       consumer_secret: ENV['tumblr_consumer_secret'],
@@ -9,33 +10,26 @@ class TumblrJob < ApplicationJob
       oauth_token_secret: ENV['tumblr_access_token_secret']
     })
 
-    tags = entry.combined_tag_list
-    tags += ENV['tumblr_tags'].split(/,\s*/) if ENV['tumblr_tags'].present?
     opts = {
-      tags: tags.join(', '),
+      tags: entry.combined_tags.map(&:name).uniq.sort.map(&:downcase).join(', '),
       slug: entry.slug,
       caption: entry.formatted_content(link_title: true),
       link: entry.permalink_url,
-      data: entry.photos.map { |p| resized_photo_path(p) },
       state: 'queue'
     }
 
-    response = tumblr.photo(ENV['tumblr_domain'], opts)
+    response = if entry.is_photo?
+      opts[:data] = entry.photos.map { |p| open(p.url(w: 2560, fm: 'jpg')).path }
+      tumblr.photo(ENV['tumblr_domain'], opts)
+    else
+      tumblr.text(ENV['tumblr_domain'], opts)
+    end
+
     if response['errors'].present?
-      raise response.to_s
+      raise response['errors']
+    elsif response['status'].present? && response['status'] >= 400
+      raise response['msg']
     end
   end
 
-  # Use rmagick instead of imgix to resize images for Tumblr,
-  # because imgix strips exif data, and I still want the exif
-  # displayed in the Tumblr theme.
-  # Also Tumblr has a 10MB file size limit, so uploading the original
-  # full-size image doesn't always work.
-  def resized_photo_path(photo)
-    file = Tempfile.new([photo.id.to_s, '.jpg'])
-    original = Magick::Image::from_blob(open(photo.original_url).read).first
-    image = original.resize_to_fit(2560)
-    image.write(file.path)
-    file.path
-  end
 end

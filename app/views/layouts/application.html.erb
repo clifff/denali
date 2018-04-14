@@ -3,15 +3,25 @@
 <head>
   <%= render partial: 'partials/meta_tags' %>
   <%= yield :meta %>
-  <%= stylesheet_link_tag 'base', media: 'all' %>
-  <%= javascript_include_tag 'application/image_zoom', defer: true %>
-  <%= javascript_include_tag 'application/lazy_load', defer: true %>
-  <%= javascript_include_tag "https://use.typekit.net/#{ENV['typekit_id']}.js", async: true, onload: 'try{Typekit.load({async:true})}catch(e){}' if ENV['typekit_id'].present? %>
-  <%= @photoblog.analytics_code.try(:html_safe) %>
+  <%= yield :stylesheets %>
+  <% if content_for?(:inline_css) %>
+    <%= yield :inline_css %>
+    <%= content_tag :link, nil, href: asset_url('application.css'), as: :style, rel: :preload, onload: "this.rel='stylesheet'".html_safe %>
+  <% else %>
+    <%= stylesheet_link_tag 'application', media: 'all' %>
+  <% end %>
+  <%= render partial: 'partials/typekit', locals: { typekit_id: ENV['typekit_id']} if ENV['typekit_id'].present? %>
+  <% if content_for? :typekit %>
+    <%= yield :typekit %>
+  <% end %>
+  <%= render partial: 'partials/inline_script', locals: { filename: 'vendor/loadcss.js' } %>
+  <%= yield :javascript %>
+  <%= javascript_pack_tag 'application', defer: true %>
+  <%= render partial: 'partials/analytics' %>
 </head>
 <body>
-<%= render partial: 'partials/header.html.erb' %>
+<%= render partial: 'partials/header.html.erb', locals: { is_minimal: @minimal_header } %>
 <%= yield %>
-<%= render partial: 'partials/footer.html.erb' %>
+<%= render partial: 'partials/footer.html.erb' unless @hide_footer %>
 </body>
 </html>

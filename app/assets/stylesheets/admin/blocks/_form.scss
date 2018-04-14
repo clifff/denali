@@ -1,6 +1,7 @@
 .form {
   display: flex;
   flex-flow: column;
+  padding: 0 20px;
 
   // Because Rails
   // scss-lint:disable SelectorFormat
@@ -8,6 +9,14 @@
     display: flex;
   }
   // scss-lint:enable SelectorFormat
+
+  @media (min-width: $bp-admin-m) {
+    padding: 0;
+  }
+}
+
+.form--no-padding {
+  padding: 0;
 }
 
 .form__input {
@@ -48,9 +57,20 @@
     line-height: 1.5;
   }
 
+  &.form__input--tiny {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
   &.form__input--textarea {
     font-size: 14px;
     height: 240px;
+    line-height: 1.5;
+  }
+
+  &.form__input--textarea-short {
+    font-size: 14px;
+    height: 120px;
     line-height: 1.5;
   }
 
@@ -73,7 +93,7 @@
   &.form__input--url {
     font-size: 14px;
     line-height: (24/14);
-    margin: 0;
+    margin: 0 10px 0 0;
     padding: 6px 2px;
     width: 100%;
 
@@ -81,6 +101,15 @@
       width: auto;
     }
   }
+}
+
+.form__dropdown {
+  color: $color-text;
+  display: block;
+  flex-grow: 1;
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 6px 0;
 }
 
 .form__actions {
@@ -91,6 +120,10 @@
   @media (min-width: $bp-admin-m) {
     flex-flow: row nowrap;
   }
+}
+
+.form__actions--no-padding {
+  padding: 0;
 }
 
 .form__buttons {
@@ -166,15 +199,17 @@
   margin: 0 0 24px;
 
   @supports (backdrop-filter: none) {
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(25px);
   }
 
-  &:hover {
-    cursor: grab;
+  &.form__photo--dragging {
+    visibility: hidden;
   }
 
-  &:active {
-    cursor: grabbing;
+  &.form__photo--mirror {
+    max-width: 840px;
+    width: 100%;
+    z-index: 100;
   }
 }
 
@@ -199,6 +234,7 @@
 .form__photo-focal-point {
   border-radius: 100px;
   box-shadow: 0 0 0 2px red;
+  display: none;
   height: 100px;
   pointer-events: none;
   position: absolute;
@@ -260,5 +296,20 @@
 
   input {
     width: 100%;
+  }
+}
+
+.form__drag {
+  align-items: center;
+  display: flex;
+  fill: $color-gray-light;
+  padding: 0 10px 0 0;
+
+  &:hover {
+    cursor: grab;
+  }
+
+  &:active {
+    cursor: grabbing;
   }
 }

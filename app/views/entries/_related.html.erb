@@ -1,10 +1,17 @@
-<% cache "#{@app_version}/entry/related/#{@entry.id}/#{@entry.updated_at.to_i}", expires_in: 1.week do %>
-  <% if @entry.related.size >= 4 %>
-    <%= stylesheet_link_tag 'components/entry_list', media: 'all' %>
+<% cache "entry/related/#{@entry.id}/#{@entry.updated_at.to_i}/#{@photoblog.id}/#{@photoblog.updated_at.to_i}" do %>
+  <% related = @entry.related %>
+  <% if related.present? %>
     <aside role="complementary">
-      <h2 class="entry__related">Related Photos You Might Like</h2>
+      <h2 class="entry__related">Other Photos You Might Like</h2>
       <ol class="entry-list entry-list--related">
-        <%= render partial: 'entries/entry_list_item', collection: @entry.related, as: :entry %>
+        <%= render partial: 'entries/entry_list_item',
+                   collection: related,
+                   as: :entry,
+                   locals: {
+                     lazy_load: true,
+                     square: true,
+                     observe: false
+                   } %>
       </ol>
     </aside>
   <% end %>

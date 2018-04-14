@@ -2,34 +2,33 @@
   <%= render partial: 'partials/admin/nav', locals: { active_nav: 'new' } %>
 <% end %>
 
-<%= form_for([:admin, @entry], html: { multipart: true, class: 'form' }) do |f| %>
+<%= form_for([:admin, @entry], html: { multipart: true, class: 'form', 'data-controller': 'entry-form', 'data-entry-form-photo-endpoint': photo_admin_entries_path, 'data-action': 'submit->entry-form#submit' }) do |f| %>
 
   <div class="form__photos">
-    <ol class="form__photos-list">
+    <ol class="form__photos-list" data-target="entry-form.photos">
       <%= render partial: 'photo_fields', locals: { i: 0 } %>
     </ol>
-    <%= link_to 'Add photo', '#', class: 'button js-photo-add' %>
+    <%= link_to 'Add photo', '#', class: 'button', 'data-action': 'click->entry-form#addPhoto' %>
   </div>
 
   <%= render partial: 'entry_fields', locals: { f: f } %>
 
   <div class="form__options">
     <h2>Publish status</h2>
-    <%= f.label :status_queued, class: 'form__label form__label--checkbox' do %><%= f.radio_button :status, 'queued' %>Queued<% end %>
-    <%= f.label :status_draft, class: 'form__label form__label--checkbox' do %><%= f.radio_button :status, 'draft' %>Draft<% end %>
-    <%= f.label :status_published, class: 'form__label form__label--checkbox' do %><%= f.radio_button :status, 'published' %>Publish it!<% end %>
+    <%= f.label :status_queued, class: 'form__label form__label--checkbox' do %><%= f.radio_button :status, 'queued' %>Queue for <%= new_queue_date.strftime('%A, %B %-d, %Y') %><% end %>
+    <%= f.label :status_draft, class: 'form__label form__label--checkbox' do %><%= f.radio_button :status, 'draft' %>Save as draft<% end %>
+    <%= f.label :status_published, class: 'form__label form__label--checkbox' do %><%= f.radio_button :status, 'published' %>Publish it now!<% end %>
     <h2>Entry options</h2>
     <%= f.label :show_in_map, class: 'form__label form__label--checkbox' do %><%= f.check_box :show_in_map, { checked: true } %> Show in map<% end %>
     <h2>Sharing options</h2>
     <%= f.label :post_to_facebook, class: 'form__label form__label--checkbox' do %><%= f.check_box :post_to_facebook, { checked: true } %> Post to Facebook<% end %>
     <%= f.label :post_to_flickr, class: 'form__label form__label--checkbox' do %><%= f.check_box :post_to_flickr, { checked: true } %> Post to Flickr<% end %>
-    <%= f.label :post_to_instagram, class: 'form__label form__label--checkbox' do %><%= f.check_box :post_to_instagram, { checked: true } %> Post to Instagram<% end %>
     <%= f.label :post_to_pinterest, class: 'form__label form__label--checkbox' do %><%= f.check_box :post_to_pinterest, { checked: true } %> Post to Pinterest<% end %>
     <%= f.label :post_to_tumblr, class: 'form__label form__label--checkbox' do %><%= f.check_box :post_to_tumblr, { checked: true } %> Post to Tumblr<% end %>
-    <%= f.label :post_to_twitter, class: 'form__label form__label--checkbox' do %>
-      <%= f.check_box :post_to_twitter, { checked: true } %> Post to Twitter
-    <% end %>
-    <%= f.text_area :tweet_text, placeholder: 'Your tweet here…', maxlength: 90, class: 'form__input form__input--textarea form__input--short' %>
+    <%= f.label :post_to_twitter, class: 'form__label form__label--checkbox' do %><%= f.check_box :post_to_twitter, { checked: true } %> Post to Twitter<% end %>
+    <%= f.text_area :tweet_text, placeholder: 'Your tweet…', maxlength: 230, class: 'form__input form__input--textarea form__input--short' %>
+    <%= f.label :post_to_instagram, class: 'form__label form__label--checkbox' do %><%= f.check_box :post_to_instagram, { checked: true } %> Post to Instagram<% end %>
+    <%= f.text_area :instagram_text, placeholder: 'Your Instagram caption…', class: 'form__input form__input--textarea form__input--short' %>
   </div>
 
   <div class="form__actions">
@@ -37,10 +36,9 @@
       <%= link_to 'Cancel', admin_entries_path, data: { confirm: 'Are you sure you want to discard this?' }, class: 'button button--danger' %>
     </div>
     <div class="form__buttons form__buttons--safe">
-    <%= f.submit 'Save entry', class: 'button button--success' %>
-    <%= f.submit 'Save & start another', class: 'button button--success', name: 'return' %>
+    <%= f.submit 'Save entry!', class: 'button button--success' %>
     </div>
   </div>
-<% end %>
 
-<%= render partial: 'tag_datalists', locals: { tags: @tags } %>
+  <%= render partial: 'tag_datalists', locals: { tags: @tags } %>
+<% end %>

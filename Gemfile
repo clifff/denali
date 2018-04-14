@@ -1,22 +1,27 @@
 source 'https://rubygems.org'
-ruby '2.4.0'
+ruby '2.5.1'
 
-gem 'rails', '~> 5.0'
-gem 'pg'
+gem 'rails', '~> 5.1'
+gem 'pg', '~> 0.21'
 
 # Auth
 gem 'omniauth-google-oauth2'
 
+# AWS
+gem 'aws-sdk-cloudfront', '~> 1'
+gem 'aws-sdk-s3', '~> 1'
+gem 'aws-sdk-rekognition', '~> 1'
+
 # Uploads
-gem 'aws-sdk', '~> 2.0'
-gem 'paperclip', '~> 5.0'
+gem 'paperclip', '~> 6.0'
 
 # Front-end things
 gem 'sass-rails', '~> 5.0'
-gem 'uglifier', '>= 1.3.0'
 gem 'jquery-rails'
 gem 'autoprefixer-rails'
 gem 'imgix'
+gem 'uglifier'
+gem 'webpacker', '~> 3.2.0'
 
 # Misc
 gem 'jbuilder', '~> 2.3'
@@ -24,15 +29,13 @@ gem 'sdoc', '~> 0.4.0', group: :doc
 gem 'acts_as_list'
 gem 'redcarpet'
 gem 'sanitize'
-gem 'exifr'
-gem 'acts-as-taggable-on', '~> 4.0'
+gem 'exifr', require: nil
+gem 'acts-as-taggable-on', '~> 5.0'
 gem 'httparty'
 gem 'kaminari'
 gem 'figaro'
 gem 'oauth'
 gem 'sentry-raven'
-gem 'cloudfront-invalidator'
-gem 'rmagick'
 
 # Caching
 gem 'dalli'
@@ -44,6 +47,10 @@ gem 'resque-scheduler'
 # Social Networks
 gem 'tumblr_client'
 gem 'flickraw'
+
+# Search
+gem 'elasticsearch-model'
+gem 'elasticsearch-rails'
 
 group :production do
   gem 'passenger'

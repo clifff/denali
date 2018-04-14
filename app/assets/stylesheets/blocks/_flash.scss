@@ -4,6 +4,7 @@
   border-radius: 2px;
   display: flex;
   flex-flow: row nowrap;
+  margin: 0 20px;
   padding: 10px;
 
   .flash__message {
@@ -22,6 +23,10 @@
     margin: 0;
     padding: 0;
     text-decoration: none;
+  }
+
+  @media (min-width: $bp-admin-m) {
+    margin: 0;
   }
 }
 

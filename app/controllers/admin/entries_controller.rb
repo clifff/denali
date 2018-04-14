@@ -1,30 +1,34 @@
 class Admin::EntriesController < AdminController
   include TagList
 
-  before_action :set_entry, only: [:show, :edit, :update, :destroy, :publish, :queue, :draft, :up, :down, :top, :bottom, :delete]
+  before_action :set_entry, only: [:show, :edit, :update, :destroy, :publish, :queue, :draft, :up, :down, :top, :bottom, :more, :share, :instagram, :facebook, :twitter, :geotag, :invalidate, :palette, :annotate, :resize_photos]
   before_action :get_tags, only: [:new, :edit, :create, :update]
   before_action :load_tags, :load_tagged_entries, only: [:tagged]
+  before_action :set_redirect_url, only: [:edit, :new, :up, :down, :top, :bottom, :more]
   after_action :update_position, only: [:create]
-  after_action :update_equipment_tags, only: [:create, :update]
-  after_action :update_location_tags, only: [:create, :update]
+  after_action :geocode_photos, only: [:create, :update]
+  after_action :annotate_photos, only: [:create, :update]
+  after_action :update_palette, only: [:create, :update]
   after_action :enqueue_invalidation, only: [:update]
 
   # GET /admin/entries
   def index
     @page = params[:page] || 1
-    @entries = @photoblog.entries.includes(:photos).published.page(@page)
+    @entries = @photoblog.entries.includes(:photos, :tags).published.page(@page)
     @page_title = 'Published'
   end
 
   # GET /admin/entries/queued
   def queued
-    @entries = @photoblog.entries.includes(:photos).queued
+    @page = params[:page] || 1
+    @entries = @photoblog.entries.includes(:photos, :tags).queued.page(@page)
     @page_title = 'Queued'
   end
 
   # GET /admin/entries/drafts
   def drafts
-    @entries = @photoblog.entries.includes(:photos).drafted
+    @page = params[:page] || 1
+    @entries = @photoblog.entries.includes(:photos, :tags).drafted.page(@page)
     @page_title = 'Drafts'
   end
 
@@ -42,10 +46,29 @@ class Admin::EntriesController < AdminController
     @page_title = 'New entry'
   end
 
+  def search
+    raise ActionController::RoutingError unless @photoblog.has_search?
+    @page = (params[:page] || 1).to_i
+    @count = 10
+    @query = params[:q]
+    @page_title = "Search"
+    if @query.present?
+      @page_title = "Search results for \"#{@query}\""
+      results = Entry.full_search(@query, @page, @count)
+      total_count = results.results.total
+      @entries = Kaminari.paginate_array(results.records.includes(:photos), total_count: total_count).page(@page).per(@count)
+    end
+  end
+
   # GET /admin/entries/1/edit
   def edit
     @page_title = "Editing “#{@entry.title}”"
-    @max_age = ENV['config_entry_max_age'].try(:to_i) || 5
+    @max_age = ENV['config_entry_caching_minutes'].try(:to_i) || ENV['config_caching_minutes'].try(:to_i) || 5
+  end
+
+  def share
+    @page_title = "Share “#{@entry.title}”"
+    @sizes = [1200]
   end
 
   # PATCH /admin/entries/1/publish
@@ -55,7 +78,7 @@ class Admin::EntriesController < AdminController
     else
       flash[:alert] = 'Your entry couldn’t be published…'
     end
-    redirect_entry
+    redirect_to session[:redirect_url] || admin_entries_path
   end
 
   # PATCH /admin/entries/1/queue
@@ -65,7 +88,7 @@ class Admin::EntriesController < AdminController
     else
       flash[:alert] = 'Your entry couldn’t be queued…'
     end
-    redirect_entry
+    redirect_to session[:redirect_url] || admin_entries_path
   end
 
   # PATCH /admin/entries/1/draft
@@ -75,7 +98,7 @@ class Admin::EntriesController < AdminController
     else
       flash[:alert] = 'Your entry couldn’t be saved as draft…'
     end
-    redirect_entry
+    redirect_to session[:redirect_url] || admin_entries_path
   end
 
   # POST /admin/entries
@@ -86,13 +109,7 @@ class Admin::EntriesController < AdminController
     respond_to do |format|
       if @entry.save
         flash[:notice] = 'Your entry was saved!'
-        format.html {
-          if params[:return].present?
-            redirect_to new_admin_entry_path
-          else
-            redirect_to get_redirect_url(@entry)
-          end
-        }
+        format.html { redirect_to new_admin_entry_path }
       else
         flash[:alert] = 'Your entry couldn’t be saved…'
         format.html { render :new }
@@ -103,10 +120,11 @@ class Admin::EntriesController < AdminController
   # PATCH/PUT /admin/entries/1
   def update
     respond_to do |format|
+      @entry.modified_at = Time.now if @entry.is_published?
       if @entry.update(entry_params)
         logger.info "Entry #{@entry.id} was updated."
         flash[:notice] = 'Your entry was updated!'
-        format.html { redirect_to get_redirect_url(@entry) }
+        format.html { redirect_to session[:redirect_url] || admin_entries_path }
       else
         flash[:alert] = 'Your entry couldn’t be updated…'
         format.html { render :edit }
@@ -114,22 +132,17 @@ class Admin::EntriesController < AdminController
     end
   end
 
-  def delete
+  def more
+    @page_title = "More options for “#{@entry.title}”"
+    @max_age = ENV['config_entry_caching_minutes'].try(:to_i) || ENV['config_caching_minutes'].try(:to_i) || 5
   end
 
   # DELETE /admin/entries/1
   def destroy
-    referrer = if @entry.is_published?
-      admin_entries_path
-    elsif @entry.is_queued?
-      queued_admin_entries_path
-    elsif @entry.is_draft?
-      drafts_admin_entries_path
-    end
     @entry.destroy
     respond_to do |format|
       flash[:notice] = 'Your entry was deleted!'
-      format.html { redirect_to referrer }
+      format.html { redirect_to admin_entries_path }
     end
   end
 
@@ -163,6 +176,59 @@ class Admin::EntriesController < AdminController
     end
   end
 
+  def instagram
+    raise ActiveRecord::RecordNotFound unless @entry.is_published? && @entry.is_photo?
+    InstagramJob.perform_later(@entry)
+    flash[:notice] = 'Your entry was sent to your Instagram queue in Buffer!'
+    redirect_to share_admin_entry_path(@entry)
+  end
+
+  def twitter
+    raise ActiveRecord::RecordNotFound unless @entry.is_published? && @entry.is_photo?
+    TwitterJob.perform_later(@entry)
+    flash[:notice] = 'Your entry was sent to your Twitter queue in Buffer!'
+    redirect_to share_admin_entry_path(@entry)
+  end
+
+  def facebook
+    raise ActiveRecord::RecordNotFound unless @entry.is_published? && @entry.is_photo?
+    FacebookJob.perform_later(@entry)
+    flash[:notice] = 'Your entry was sent to your Facebook queue in Buffer!'
+    redirect_to share_admin_entry_path(@entry)
+  end
+
+  def geotag
+    @entry.photos.map(&:geocode)
+    flash[:notice] = 'Your entry is currently being geotagged. This may take a minute.'
+    redirect_to more_admin_entry_path(@entry)
+  end
+
+  def invalidate
+    @entry.touch
+    CloudfrontInvalidationJob.perform_later(@entry)
+    flash[:notice] = 'Your entry is currently being invalidated in CloudFront. This may take a few minutes.'
+    redirect_to more_admin_entry_path(@entry)
+  end
+
+  def palette
+    @entry.photos.map(&:update_palette)
+    flash[:notice] = 'Your palette is currently being updated. This may take a minute.'
+    redirect_to more_admin_entry_path(@entry)
+  end
+
+  def annotate
+    @entry.photos.map(&:annotate)
+    flash[:notice] = 'Annotation data is currently being updated. This may take a minute.'
+    redirect_to more_admin_entry_path(@entry)
+  end
+
+  def resize_photos
+    @size = params[:size]
+    respond_to do |format|
+      format.js
+    end
+  end
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_entry
@@ -174,28 +240,12 @@ class Admin::EntriesController < AdminController
     end
 
     def entry_params
-      params.require(:entry).permit(:title, :body, :slug, :status, :tag_list, :post_to_twitter, :post_to_tumblr, :post_to_flickr, :post_to_instagram, :post_to_facebook, :post_to_pinterest, :tweet_text, :show_in_map, :invalidate_cloudfront, photos_attributes: [:source_url, :source_file, :id, :_destroy, :position, :caption, :focal_x, :focal_y])
+      params.require(:entry).permit(:title, :body, :slug, :status, :tag_list, :post_to_twitter, :post_to_tumblr, :post_to_flickr, :post_to_instagram, :post_to_facebook, :post_to_pinterest, :tweet_text, :instagram_text, :show_in_map, :invalidate_cloudfront, photos_attributes: [:source_url, :source_file, :id, :_destroy, :position, :caption, :focal_x, :focal_y])
     end
 
     def update_position
       if !@entry.is_queued?
         @entry.remove_from_list
-      end
-    end
-
-    def redirect_entry
-      respond_to do |format|
-        format.html { redirect_to get_redirect_url(@entry)}
-      end
-    end
-
-    def get_redirect_url(entry)
-      if entry.is_published?
-        entry.permalink_url
-      elsif entry.is_queued?
-        queued_admin_entries_path
-      else
-        drafts_admin_entries_path
       end
     end
 
@@ -206,7 +256,7 @@ class Admin::EntriesController < AdminController
 
     def respond_to_reposition
       respond_to do |format|
-        format.html { redirect_to queued_admin_entries_path }
+        format.html { redirect_to session[:redirect_url] || admin_entries_path }
         format.json {
           response = {
             status: 200,
@@ -218,22 +268,23 @@ class Admin::EntriesController < AdminController
       end
     end
 
+    def set_redirect_url
+      session[:redirect_url] = request.referer
+    end
+
     def enqueue_invalidation
-      CloudfrontInvalidationJob.perform_later(@entry) if Rails.env.production? && @entry.is_published? && entry_params[:invalidate_cloudfront] == "1"
+      CloudfrontInvalidationJob.perform_later(@entry) if entry_params[:invalidate_cloudfront] == "1"
     end
 
-    def update_equipment_tags
-      tags = []
-      @entry.photos.each do |p|
-        tags << p.formatted_make
-        tags << p.formatted_camera
-        tags << p.formatted_film if p.film_make.present? && p.film_type.present?
-      end
-      @entry.equipment_list = tags
-      @entry.save
+    def geocode_photos
+      @entry.photos.map(&:geocode)
     end
 
-    def update_location_tags
-      ReverseGeocodeJob.perform_later(@entry) if ENV['google_maps_api_key'].present? && @entry.show_in_map?
+    def annotate_photos
+      @entry.photos.map(&:annotate)
+    end
+
+    def update_palette
+      @entry.photos.map(&:update_palette)
     end
 end

@@ -6,15 +6,17 @@ $color-gray-light      : #AAA;
 $color-gray-very-light : #EEE;
 
 // Colors
-$color-background      : #FFF;
-$color-links           : $color-red;
-$color-text            : $color-gray-dark;
-$color-text-alt        : $color-gray-medium;
-$color-border          : $color-gray-very-light;
-$color-disabled        : $color-gray-very-light;
-$color-photo-background: $color-gray-very-light;
-$color-twitter         : #55ACEE;
-$color-facebook        : #3B5998;
+$color-background        : #FFF;
+$color-links             : $color-red;
+$color-text              : $color-gray-dark;
+$color-text-alt          : $color-gray-medium;
+$color-border            : $color-gray-very-light;
+$color-disabled          : $color-gray-very-light;
+$color-photo-background  : $color-gray-very-light;
+$color-twitter           : #55ACEE;
+$color-facebook          : #3B5998;
+$color-instagram         : #D93275;
+$color-caption-background: #FFF;
 
 $color-alert-default : #F4F4F4;
 $color-alert-info    : #51C1DB;
@@ -26,7 +28,7 @@ $color-alert-danger  : #DE5152;
 $bp-xxxs: 400px;
 $bp-xxs : 480px;
 $bp-xs  : 600px;
-$bp-s   : 840px;
+$bp-s   : 768px;
 $bp-m   : 960px;
 $bp-l   : 1024px;
 $bp-xl  : 1280px;
@@ -41,4 +43,4 @@ $font-serif: 'chaparral-pro', 'Palatino', 'Georgia', serif;
 $bp-admin-m: 800px;
 
 // Other
-$fadein-duration: 100ms;
+$fadein-duration: 150ms;

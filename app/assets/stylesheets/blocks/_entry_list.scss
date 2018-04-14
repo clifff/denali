@@ -1,13 +1,26 @@
 .entry-list {
-  display: flex;
-  flex-flow: row wrap;
-  justify-content: center;
+  @include clearfix;
+  display: block;
   margin: 24px auto;
   max-width: $bp-max;
-  padding: 0 2px;
 
-  @media (min-width: $bp-l) {
+  @media (min-width: $bp-xl) {
     margin: 72px auto;
+  }
+}
+
+.entry_list__heading {
+  font-size: 18px;
+  line-height: (24/18);
+  margin: 0 auto;
+  max-width: $bp-max;
+  padding: 0 20px 24px;
+  text-align: center;
+
+  @media (min-width: $bp-s) {
+    font-size: 24px;
+    line-height: (36/24);
+    padding: 0 90px 36px;
   }
 }
 
@@ -20,32 +33,37 @@
 }
 
 .entry-list__item {
-  @include aspect-ratio(1, 1, '.entry-list__link');
+  border-radius: 4px;
   display: block;
-  flex-basis: 50%;
-  flex-grow: 0;
-  flex-shrink: 0;
-  font-size: 0;
+  float: left;
+  margin: 0 4px 8px;
   overflow: hidden;
-  padding: 2px;
+  position: relative;
+  width: calc(50% - 8px);
 
   @media (min-width: $bp-xxxs) {
-    flex-basis: calc(100%/3);
-    flex-grow: 0;
-    flex-shrink: 0;
+    width: calc(100%/3 - 8px);
   }
 
   @media (min-width: $bp-xl) {
-    flex-basis: 25%;
-    flex-grow: 0;
-    flex-shrink: 0;
+    width: calc(25% - 8px);
   }
 }
 
+.entry-list__wrapper {
+  background-color: $color-photo-background;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
 .entry-list__link {
+  bottom: 0;
   display: block;
-  margin: 2px;
+  left: 0;
   overflow: hidden;
+  position: absolute;
+  right: 0;
+  top: 0;
 
   &:hover,
   &:active {
@@ -58,7 +76,10 @@
 }
 
 .entry-list__item--map {
+  float: none;
   font-family: $font-sans;
+  margin: 0;
+  width: 100%;
 }
 
 .entry-list__image {
@@ -72,11 +93,8 @@
   }
 }
 
-.entry-list__link--photo {
-  background-color: $color-photo-background;
-}
-
 .entry-list__photo {
+  height: 100%;
   overflow: hidden;
 
   &:hover .entry-list__photo-caption {
@@ -84,12 +102,21 @@
       opacity: 1;
     }
   }
+
+  noscript {
+    bottom: 0;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+  }
 }
 
 .entry-list__photo-caption {
   align-items: center;
   backdrop-filter: blur(20px);
   background-color: rgba(0, 0, 0, 0.65);
+  border-radius: 4px;
   bottom: 0;
   display: flex;
   flex-flow: column nowrap;

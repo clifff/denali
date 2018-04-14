@@ -2,9 +2,18 @@ class FacebookJob < BufferJob
   queue_as :default
 
   def perform(entry)
-    text = "#{entry.plain_title}\n\n#{entry.permalink_url}"
-    image_url = entry.photos.first.url(w: 2048)
-    thumbnail_url = entry.photos.first.url(w: 512)
-    post_to_buffer('facebook', text, image_url, thumbnail_url)
+    return if !entry.is_published? || !entry.is_photo?
+    text = []
+    text << entry.plain_title
+    text << entry.plain_body if entry.body.present?
+    text << entry.permalink_url
+    text = text.join("\n\n")
+    ids = get_profile_ids('facebook')
+    if entry.is_photo?
+      media = media_hash(entry.photos.first)
+      post_to_buffer(ids, text, media)
+    else
+      post_to_buffer(ids, text)
+    end
   end
 end

@@ -19,14 +19,26 @@ class EntriesControllerTest < ActionController::TestCase
   end
 
   test "should generate sitemap" do
-    get :sitemap, params: { format: 'xml' }
+    get :sitemap, params: { format: 'xml', page: 1 }
     assert_template :sitemap
     assert_response :success
   end
 
-  test "should generate feed" do
-    get :index, params: { page: 1, format: 'atom' }
-    assert_template :index
+  test "should generate sitemap index" do
+    get :sitemap_index, params: { format: 'xml' }
+    assert_template :sitemap_index
+    assert_response :success
+  end
+
+  test "should generate atom feed" do
+    get :feed, params: { format: 'atom' }
+    assert_template :feed
+    assert_response :success
+  end
+
+  test "should generate json feed" do
+    get :feed, params: { format: 'json' }
+    assert_template :feed
     assert_response :success
   end
 
@@ -64,6 +76,13 @@ class EntriesControllerTest < ActionController::TestCase
     assert_redirected_to entry.permalink_url
   end
 
+  test 'should redirect from photo url' do
+    photo = photos(:peppers)
+    entry = entries(:peppers)
+    get :photo, params: { id: photo.id }
+    assert_redirected_to entry.permalink_url
+  end
+
   test 'should render tag page' do
     entry = entries(:peppers)
     entry.tag_list = 'washington'
@@ -87,13 +106,21 @@ class EntriesControllerTest < ActionController::TestCase
     assert_response :success
   end
 
-  test 'should render tag page feed' do
+  test 'should render tag atom feed' do
     entry = entries(:peppers)
     entry.tag_list = 'washington'
     entry.save
-    get :tagged, params: { tag: 'washington', format: 'atom' }
-    assert_template :tagged
+    get :tag_feed, params: { tag: 'washington', format: 'atom' }
+    assert_template :tag_feed
     assert_response :success
   end
 
+  test 'should render tag json feed' do
+    entry = entries(:peppers)
+    entry.tag_list = 'washington'
+    entry.save
+    get :tag_feed, params: { tag: 'washington', format: 'json' }
+    assert_template :tag_feed
+    assert_response :success
+  end
 end

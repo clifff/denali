@@ -1,27 +1,28 @@
-<%= stylesheet_link_tag 'components/exif', media: 'all' %>
 <p class="exif">
   <% if photo.make.present? && photo.model.present? %>
     <span class="exif__field">
       Taken with <%= article photo.make %> <%= photo.formatted_camera %>
-      <% if photo.film_make.present? && photo.film_type.present? %>
+      <% if photo.is_film? %>
         on <%= photo.formatted_film %>
       <% end %>
     </span>
   <% end %>
 
-  <% if photo.focal_length.present? %>
-    <span class="exif__field"><%= photo.focal_length %> mm <span class="exif__optional">focal length</span></span>
-  <% end %>
+  <% unless photo.is_phone_camera? %>
+    <% if photo.focal_length.present? %>
+      <span class="exif__field"><%= photo.focal_length %> mm <span class="exif__optional">focal length</span></span>
+    <% end %>
 
-  <% if photo.exposure.present? && photo.f_number.present? %>
-    <span class="exif__field"><%= exposure photo.exposure %> at f/<%= aperture photo.f_number %></span>
-  <% elsif photo.exposure.present? %>
-    <span class="exif__field"><%= exposure photo.exposure %></span>
-  <% elsif photo.f_number.present? %>
-    <span class="exif__field">f/<%= aperture photo.f_number %></span>
-  <% end %>
+    <% if photo.exposure.present? && photo.f_number.present? %>
+      <span class="exif__field"><%= exposure photo.exposure %> at f/<%= aperture photo.f_number %></span>
+    <% elsif photo.exposure.present? %>
+      <span class="exif__field"><%= exposure photo.exposure %></span>
+    <% elsif photo.f_number.present? %>
+      <span class="exif__field">f/<%= aperture photo.f_number %></span>
+    <% end %>
 
-  <% if photo.iso.present? %>
-    <span class="exif__field">ISO <%= photo.iso %></span>
+    <% if photo.iso.present? %>
+      <span class="exif__field">ISO <%= photo.iso %></span>
+    <% end %>
   <% end %>
 </p>

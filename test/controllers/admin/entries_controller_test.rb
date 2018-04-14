@@ -4,6 +4,7 @@ class Admin::EntriesControllerTest < ActionController::TestCase
 
   def setup
     session[:user_id] = users(:guille).id
+    @blog = blogs(:allencompassingtrip)
     @entry = entries(:peppers)
     @entry.tag_list = 'washington'
     @entry.save
@@ -53,12 +54,54 @@ class Admin::EntriesControllerTest < ActionController::TestCase
     assert_template :edit
   end
 
-  test 'should render delete entry page' do
-    get :delete, params: { id: @entry.id }
+  test 'should render share entry page' do
+    test_1 = Entry.new(title: 'test 1', status: 'queued', blog_id: @blog.id)
+    test_1.save
+    test_2 = Entry.new(title: 'test 2', status: 'draft', blog_id: @blog.id)
+    test_2.save
+
+    # Test published entry
+    get :share, params: { id: @entry.id }
     assert_not_nil assigns(:entry)
     assert_response :success
     assert_template layout: 'layouts/admin'
-    assert_template :delete
+    assert_template :share
+    # Test queued entry
+    assert_not_nil assigns(:entry)
+    assert_response :success
+    assert_template layout: 'layouts/admin'
+    assert_template :share
+    # Test draft entry
+    assert_not_nil assigns(:entry)
+    assert_response :success
+    assert_template layout: 'layouts/admin'
+    assert_template :share
+  end
+
+  test 'should render more options page' do
+    test_1 = Entry.new(title: 'test 1', status: 'queued', blog_id: @blog.id)
+    test_1.save
+    test_2 = Entry.new(title: 'test 2', status: 'draft', blog_id: @blog.id)
+    test_2.save
+
+    # Test published entry
+    get :more, params: { id: @entry.id }
+    assert_not_nil assigns(:entry)
+    assert_response :success
+    assert_template layout: 'layouts/admin'
+    assert_template :more
+    # Test queued entry
+    get :more, params: { id: test_1.id }
+    assert_not_nil assigns(:entry)
+    assert_response :success
+    assert_template layout: 'layouts/admin'
+    assert_template :more
+    # Test draft entry
+    get :more, params: { id: test_2.id }
+    assert_not_nil assigns(:entry)
+    assert_response :success
+    assert_template layout: 'layouts/admin'
+    assert_template :more
   end
 
   test 'should render photo fields' do
@@ -73,7 +116,6 @@ class Admin::EntriesControllerTest < ActionController::TestCase
     patch :queue, params: { id: entry.id }
     assert assigns(:entry).is_queued?
     assert_not_nil assigns(:entry).position
-    assert_redirected_to queued_admin_entries_path
   end
 
   test 'should draft entries' do
@@ -81,7 +123,6 @@ class Admin::EntriesControllerTest < ActionController::TestCase
     patch :draft, params: { id: entry.id }
     assert assigns(:entry).is_draft?
     assert_nil assigns(:entry).position
-    assert_redirected_to drafts_admin_entries_path
   end
 
   test 'should publish entries' do
@@ -89,55 +130,57 @@ class Admin::EntriesControllerTest < ActionController::TestCase
     patch :publish, params: { id: entry.id }
     assert assigns(:entry).is_published?
     assert_nil assigns(:entry).position
-    assert_redirected_to assigns(:entry).permalink_url
   end
 
   test 'should create entries' do
     post :create, params: { entry: { title: 'Published', status: 'published' } }
     assert assigns(:entry).is_published?
     assert_nil assigns(:entry).position
-    assert_redirected_to assigns(:entry).permalink_url
+    assert_redirected_to new_admin_entry_path
 
     post :create, params: { entry: { title: 'Draft', status: 'draft' } }
     assert assigns(:entry).is_draft?
     assert_nil assigns(:entry).position
-    assert_redirected_to drafts_admin_entries_path
+    assert_redirected_to new_admin_entry_path
 
     post :create, params: { entry: { title: 'Queued', status: 'queued' } }
     assert assigns(:entry).is_queued?
     assert_not_nil assigns(:entry).position
-    assert_redirected_to queued_admin_entries_path
+    assert_redirected_to new_admin_entry_path
   end
 
   test 'should update entries' do
     entry = entries(:peppers)
     patch :update, params: { id: entry.id, entry: { id: entry.id } }
-    assert_redirected_to assigns(:entry).permalink_url
+    assert_redirected_to admin_entries_path
+  end
+
+  test 'update should change modified_at' do
+    entry = entries(:peppers)
+    modified = entry.modified_at
+    patch :update, params: { id: entry.id, entry: { id: entry.id } }
+    entry.reload
+    assert_not_equal modified, entry.modified_at
   end
 
   test 'should reposition entries' do
-    blog = blogs(:allencompassingtrip)
-    test_1 = Entry.new(title: 'test 1', status: 'queued', blog_id: blog.id)
+    test_1 = Entry.new(title: 'test 1', status: 'queued', blog_id: @blog.id)
     test_1.save
-    test_2 = Entry.new(title: 'test 2', status: 'queued', blog_id: blog.id)
+    test_2 = Entry.new(title: 'test 2', status: 'queued', blog_id: @blog.id)
     test_2.save
 
     entry = entries(:panda)
 
     post :down, params: { id: entry.id }
     assert_equal assigns(:entry).position, 2
-    assert_redirected_to queued_admin_entries_path
 
     post :up, params: { id: entry.id }
     assert_equal assigns(:entry).position, 1
-    assert_redirected_to queued_admin_entries_path
 
     post :bottom, params: { id: entry.id }
     assert_equal assigns(:entry).position, 3
-    assert_redirected_to queued_admin_entries_path
 
     post :top, params: { id: entry.id }
     assert_equal assigns(:entry).position, 1
-    assert_redirected_to queued_admin_entries_path
   end
 end

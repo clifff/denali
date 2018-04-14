@@ -1,38 +1,54 @@
 <% content_for :meta do %>
-  <% cache "entries/meta/tagged/#{@tag_slug}/#{@page}/#{@photoblog.id}/#{@photoblog.updated_at.to_i}" do %>
-    <title><%= sanitize "Entries tagged “#{@tags.first.name}” &middot; #{@photoblog.name}" %><%= sanitize " &middot Page #{@page}" unless @page.nil? || @page == 1 %></title>
-    <meta name="description" content="<%= Sanitize.fragment(@photoblog.description) %>">
-    <link rel="canonical" href="<%= tag_url(@tags.first.slug) %>">
+  <% cache "entries/meta/tagged/#{@tag_slug}/page/#{@page}/count/#{@count}/#{@photoblog.id}/#{@photoblog.updated_at.to_i}" do %>
+    <title><%= sanitize "#{@tags.first.name} · #{@photoblog.name}" %><%= sanitize " · Page #{@page}" unless @page.nil? || @page == 1 %></title>
+    <meta name="description" content="<%= number_with_delimiter @tags.first.taggings_count %> photos tagged “<%= @tags.first.name %>” on <%= @photoblog.name %>.">
+    <link rel="canonical" href="<%= @page == 1 ? tag_url(tag: @tags.first.slug, page: nil) : tag_url(@tags.first.slug, @page) %>">
 
-    <meta property="og:title" content="<%= sanitize "Entries tagged “#{@tags.first.name}” &middot; #{@photoblog.name}" %>">
-    <meta property="og:image" content="<%= @entries.first.photos.first.url(w: 1200, h: 628) %>">
+    <meta property="og:title" content="<%= sanitize "#{@tags.first.name} · #{@photoblog.name}" %>">
+    <% if @photoblog.logo.present? %>
+      <meta property="og:image" content="<%= @photoblog.logo_url(w: 1200, h: 628, fm: 'png', pad: 50, fit: 'fill', bg: 'fff') %>">
+    <% else %>
+      <meta property="og:image" content="<%= @entries.first.photos.first.url(w: 1200, h: 628) %>">
+    <% end %>
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="628">
-    <meta property="og:description" content="<%= Sanitize.fragment(@photoblog.description) %>">
-    <meta property="og:url" content="<%= @page.nil? || @page == 1 ? tag_url(@tags.first.slug) : tag_url(@tags.first.slug, @page) %>">
+    <meta property="og:description" content="<%= number_with_delimiter @tags.first.taggings_count %> photos tagged “<%= @tags.first.name %>” on <%= @photoblog.name %>.">
+    <meta property="og:url" content="<%= @page == 1 ? tag_url(tag: @tags.first.slug, page: nil) : tag_url(@tags.first.slug, @page) %>">
     <meta property="og:type" content="Website">
     <meta property="og:site_name" content="<%= @photoblog.name %>">
     <meta property="og:locale" content="en_US">
 
     <% if @photoblog.twitter.present? %>
-      <meta name="twitter:site" content="@<%= @photoblog.twitter.gsub(/^@/, '') %>">
-      <meta name="twitter:creator" content="@<%= @photoblog.twitter.gsub(/^@/, '') %>">
+      <meta name="twitter:site" content="@<%= @photoblog.twitter.gsub(/^https:\/\/(www\.)?twitter.com\//, '') %>">
+      <meta name="twitter:creator" content="@<%= @photoblog.twitter.gsub(/^https:\/\/(www\.)?twitter.com\//, '') %>">
     <% end %>
-    <meta name="twitter:title" content="<%= sanitize "Entries tagged “#{@tags.first.name}” &middot; #{@photoblog.name}" %>">
-    <meta name="twitter:url" content="<%= @page.nil? || @page == 1 ? tag_url(@tags.first.slug) : tag_url(@tags.first.slug, @page) %>">
-    <meta name="twitter:description" content="<%= Sanitize.fragment(@photoblog.description) %>">
+    <meta name="twitter:title" content="<%= sanitize "#{@tags.first.name} · #{@photoblog.name}" %>">
+    <meta name="twitter:url" content="<%= @page == 1 ? tag_url(tag: @tags.first.slug, page: nil) : tag_url(@tags.first.slug, @page) %>">
+    <meta name="twitter:description" content="<%= number_with_delimiter @tags.first.taggings_count %> photos tagged “<%= @tags.first.name %>” on <%= @photoblog.name %>.">
+    <% if @photoblog.touch_icon.present? %>
+      <meta name="twitter:image" content="<%= @photoblog.touch_icon_url(w: 192) %>">
+    <% end %>
     <meta name="twitter:card" content="summary">
-    <%= auto_discovery_link_tag :atom, tag_url(format: 'atom'), title: "#{@photoblog.name} - Entries tagged “#{@tags.first.name}”" %>
-    <link rel="alternate" type="application/vnd.api+json" href="<%= @page == 1 ? tag_url(@tags.first.slug) : tag_url(tag: @tags.first.slug, page: @page) %>" %>
+    <%= auto_discovery_link_tag :atom, tag_feed_url(format: 'atom', page: nil), title: sanitize("#{@tags.first.name} · #{@photoblog.name}") %>
+    <%= auto_discovery_link_tag :atom, tag_feed_url(format: 'json', page: nil), title: sanitize("#{@tags.first.name} · #{@photoblog.name}"), type: 'application/json' %>
+    <link rel="alternate" type="application/vnd.api+json" href="<%= @page == 1 ? tag_url(@tags.first.slug, page: nil) : tag_url(tag: @tags.first.slug, page: @page) %>" %>
   <% end %>
 <% end %>
 
-<% cache "#{@app_version}/entries/tagged/#{@tag_slug}/#{@page}/#{@photoblog.id}/#{@photoblog.updated_at.to_i}" do %>
-<%= stylesheet_link_tag 'components/entry_list', media: 'all' %>
-<%= stylesheet_link_tag 'components/exif', media: 'all' %>
-  <ol class="entry-list" role="main">
-    <%= render partial: 'entries/entry_list_item', collection: @entries, as: :entry, locals: { lazy_load_start_index: 12 } %>
-  </ol>
-  <%= stylesheet_link_tag 'components/pagination', media: 'all' %>
-  <%= paginate @entries %>
+<% cache "entries/tagged/#{@tag_slug}/page/#{@page}/count/#{@count}/#{@photoblog.id}/#{@photoblog.updated_at.to_i}" do %>
+  <div data-controller="infinite-scroll" data-infinite-scroll-base-url="<%= tag_url(tag: @tag_slug, page: nil) %>" data-infinite-scroll-current-page="<%= @page %>">
+    <ol class="entry-list" role="main" data-target="infinite-scroll.container" data-controller="grid">
+      <%= render partial: 'entries/entry_list_item',
+          collection: @entries,
+          as: :entry,
+          locals: {
+            page_url: @page == 1 ? tag_url(tag: @tags.first.slug, page: nil) : tag_url(@tags.first.slug, @page),
+            lazy_load: false,
+            square: false,
+            observe: true
+          } %>
+    </ol>
+    <%= paginate @entries, target: 'infinite-scroll.paginator' %>
+    <%= render partial: 'partials/loading', locals: { target: 'infinite-scroll.spinner' } %>
+  </div>
 <% end %>

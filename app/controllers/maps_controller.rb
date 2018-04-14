@@ -1,10 +1,11 @@
 class MapsController < ApplicationController
-  before_action :set_max_age, only: [:index, :photos]
-  before_action :set_entry_max_age, only: [:photo]
-
-  layout false
+  before_action :set_max_age, only: [:index, :photos, :photo]
+  before_action :check_if_user_has_visited, only: [:index]
+  skip_before_action :verify_authenticity_token
 
   def index
+    @hide_footer = true
+    @minimal_header = true
   end
 
   def photos

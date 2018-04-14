@@ -2,10 +2,10 @@ class PinterestJob < ApplicationJob
   queue_as :default
 
   def perform(entry)
-    all_tags = entry.combined_tags.map { |t| "##{t.slug.gsub(/-/, '')}" }.join(' ')
+    return if !entry.is_published? || !entry.is_photo? || !Rails.env.production?
     opts = {
       board: ENV['pinterest_board_id'],
-      note: "#{entry.plain_title} #{all_tags}",
+      note: entry.plain_title,
       link: entry.permalink_url,
       image_url: entry.photos.first.url(w: 2048)
     }

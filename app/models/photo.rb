@@ -1,3 +1,5 @@
+require 'exifr/jpeg'
+
 class Photo < ApplicationRecord
   include Formattable
 
@@ -9,8 +11,8 @@ class Photo < ApplicationRecord
                       bucket: ENV['s3_bucket'] },
     s3_headers: { 'Cache-Control': 'max-age=31536000, public' },
     s3_region: ENV['s3_region'],
-    s3_protocol: 'http',
-    url: ':s3_domain_url',
+    s3_protocol: 'https',
+    url: ':s3_path_url',
     path: 'photos/:hash.:extension',
     hash_secret: ENV['secret_key_base'],
     use_timestamp: false
@@ -24,11 +26,11 @@ class Photo < ApplicationRecord
   before_create :set_image
   after_image_post_process :save_exif, :save_dimensions
 
-  # Workaround for https://github.com/rails/rails/issues/26726
-  after_save :touch_entry
+  after_save :update_entry
 
-  def touch_entry
+  def update_entry
     self.entry.touch
+    self.entry.update_tags
   end
 
   def self.oldest
@@ -55,9 +57,31 @@ class Photo < ApplicationRecord
         opts[:crop] = 'focalpoint'
         opts['fp-x'] = self.focal_x
         opts['fp-y'] = self.focal_y
+      else
+        opts[:crop] = 'faces'
       end
     end
+    if opts[:fm].present?
+      opts.delete(:auto)
+    end
     Ix.path(self.original_path).to_url(opts.reject { |k,v| v.blank? })
+  end
+
+  # Returns the url of the image, formatted & sized fit to into instagram's
+  # 5:4 ratio
+  def instagram_url
+    if self.is_vertical?
+      self.url(w: 1080, h: 1350, fit: 'fill', bg: 'fff', fm: 'jpg', q: 90)
+    elsif self.is_horizontal?
+      self.url(w: 1080, h: 864, fit: 'fill', bg: 'fff', fm: 'jpg', q: 90)
+    else
+      self.url(w: 1080, fm: 'jpg', q: 90)
+    end
+  end
+
+  def palette_url(opts = {})
+    opts.reverse_merge!(palette: 'json', colors: 6)
+    Ix.path(self.original_path).to_url(opts)
   end
 
   def formatted_caption
@@ -80,6 +104,10 @@ class Photo < ApplicationRecord
     self.width < self.height
   end
 
+  def has_location?
+    self.longitude.present? && self.latitude.present?
+  end
+
   def height_from_width(width)
     ((self.height.to_f * width.to_f)/self.width.to_f).round
   end
@@ -97,6 +125,8 @@ class Photo < ApplicationRecord
       'Fujifilm'
     elsif self.make =~ /canon/i
       'Canon'
+    elsif self.make =~ /leica/i
+      'Leica'
     else
       self.make&.titlecase
     end
@@ -105,13 +135,68 @@ class Photo < ApplicationRecord
   def formatted_camera
     if self.model =~ /iphone/i
       self.model
+    elsif self.model =~ /leica/i
+      self.model.titlecase
     else
       "#{self.formatted_make} #{self.model&.gsub(%r{#{formatted_make}}i, '')&.strip}"
     end
   end
 
   def formatted_film
+    return '' if self.film_type.blank? || self.film_make.blank?
     self.film_type.match(self.film_make) ? self.film_type : "#{self.film_make} #{self.film_type}"
+  end
+
+  def is_phone_camera?
+    self.model =~ /iphone/i
+  end
+
+  def is_film?
+    self.film_make.present? && self.film_type.present?
+  end
+
+  def long_address
+    [self.neighborhood, self.sublocality, self.locality, self.administrative_area, self.country].uniq.reject(&:blank?).join(', ')
+  end
+
+  def short_address
+    [self.locality, self.administrative_area, self.country].uniq.reject(&:blank?).reject { |a| a.match? /^united (states|kingdom)/i }.join(', ')
+  end
+
+  def geocode
+    GeocodeJob.perform_later(self)
+  end
+
+  def annotate
+    ImageAnnotationJob.perform_later(self)
+  end
+
+  def update_palette
+    PaletteJob.perform_later(self)
+  end
+
+  def prominent_color
+    self.color_vibrant || self.color_muted || '#EEEEEE'
+  end
+
+  def color?
+    return if self.color_palette.blank?
+    !self.color_palette.split(',').map { |c| c.gsub('#', '') }.reject { |c| c.scan(/../).uniq.size == 1 }.empty?
+  end
+
+  def black_and_white?
+    return if self.color_palette.blank?
+    !self.color?
+  end
+
+  def alt_text
+    if self.caption.present?
+      self.plain_caption
+    elsif self.keywords.present?
+      "Photo may contain: #{self.keywords}"
+    else
+      ''
+    end
   end
 
   private

@@ -1,6 +1,7 @@
 class OembedController < ApplicationController
   before_action :load_entry, :set_request_format
-  before_action :set_entry_max_age, only: [:show]
+  before_action :set_max_age, only: [:show]
+  skip_before_action :verify_authenticity_token
 
   def show
     @url, @width, @height = get_photo(@entry, 1200, params[:maxwidth], params[:maxheight])
@@ -25,6 +26,7 @@ class OembedController < ApplicationController
       raise ActiveRecord::RecordNotFound
     else
       @entry = @photoblog.entries.includes(:photos, :user).published.find(url[:id])
+      logger.info "oEmbed rendered for entry #{@entry.permalink_url}"
     end
   end
 

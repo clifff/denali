@@ -10,9 +10,9 @@ module ApplicationHelper
   def lazy_responsive_image_tag(photo, photo_key, html_options = {})
     html_options[:'data-srcset'] = get_srcset(photo, photo_key)
     html_options[:sizes] = get_sizes(photo_key)
-    html_options[:class] += ' js-lazy-load'
     html_options[:'data-src'] = get_src(photo, photo_key) unless PHOTOS[photo_key]['src'].nil?
-    content_tag :img, nil, html_options
+    html_options[:src] = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+    content_tag :img, '', html_options
   end
 
   def get_src(photo, photo_key)
@@ -45,23 +45,24 @@ module ApplicationHelper
     render partial: "partials/svg/#{icon}.html.erb", locals: { svg_class: "#{svg_class} #{svg_class}--#{icon}" }
   end
 
-  def intrinsic_ratio_padding(photo)
-    padding = (photo.height.to_f/photo.width.to_f) * 100
-    "style=padding-top:#{padding}%"
+  def intrinsic_ratio_padding(photo, opts = {})
+    opts.reverse_merge!(square: false)
+    padding = opts[:square] ? 100 : ((photo.height.to_f/photo.width.to_f) * 100)
+    "padding-top:#{padding}%"
   end
 
   def intrinsic_ratio_width(photo)
     width = (photo.width.to_f/photo.height.to_f) * 100
-    "style=width:#{width}vh"
+    "width:#{width}vh"
   end
 
-  def publish_date_for_queued(entry, format = '%A, %B %-d')
-    days = if Time.now.utc.hour < 14
-      entry.position - 1
-    else
-      entry.position
+  def image_placeholder(photo)
+    return '' if photo.color_palette.blank?
+    style = if photo.color_palette.present?
+      palette = photo.color_palette.split(',').sample(2).join(',')
+      "background:linear-gradient(to bottom right, #{palette})"
     end
-    (Time.now + days.days).strftime(format)
+    style.html_safe
   end
 
   def inline_asset(filename, opts = {})

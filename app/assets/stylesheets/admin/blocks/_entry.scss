@@ -8,17 +8,31 @@
 }
 
 .entry__thumb {
+  backdrop-filter: blur(20px);
   display: block;
   font-size: 0;
   height: 100%;
   left: 0;
   position: absolute;
   top: 0;
-  transition: opacity $fadein-duration linear;
+  width: 100%;
+}
+
+.entry__thumbs {
+  display: flex;
+  flex-flow: row wrap;
+}
+
+.entry__thumb--small {
+  display: block;
+  font-size: 0;
+  margin: 12px 0;
 }
 
 .entry__link {
-  border: 1px solid $color-border;
+  background-color: $color-photo-background;
+  background-repeat: no-repeat;
+  background-size: cover;
   border-bottom: 0;
   display: block;
   font-size: 0;
@@ -27,9 +41,6 @@
 }
 
 .entry__content {
-  border: 1px solid $color-border;
-  border-bottom: 0;
-  border-top: 0;
   padding: 12px 20px;
 
   h2,
@@ -56,7 +67,19 @@
       margin-bottom: 0;
     }
   }
+
+  @media (min-width: $bp-admin-m) {
+    border: 1px solid $color-border;
+    border-bottom: 0;
+  }
 }
+
+.entry__content .entry__help {
+  color: $color-gray-medium;
+  font-size: 12px;
+  line-height: 2;
+}
+
 
 .entry__content--text {
   border-top: 1px solid $color-border;
@@ -78,11 +101,11 @@
   }
 }
 
-.entry__meta {
+.entry__content--misc {
   border: 1px solid $color-border;
-  border-bottom-left-radius: 2px;
-  border-bottom-right-radius: 2px;
-  border-top: 0;
+}
+
+.entry__meta {
   color: $color-gray-medium;
   font-size: 12px;
   line-height: 2;
@@ -109,6 +132,13 @@
   a:last-child {
     margin-right: 0;
   }
+
+  @media (min-width: $bp-admin-m) {
+    border: 1px solid $color-border;
+    border-bottom-left-radius: 2px;
+    border-bottom-right-radius: 2px;
+    border-top: 0;
+  }
 }
 
 .entry__meta-bottom {
@@ -134,6 +164,11 @@
   width: 100%;
 }
 
+.entry__actions--left {
+  justify-content: flex-start;
+  width: 100%;
+}
+
 .entry__actions--queue {
   flex-grow: 1;
 }
@@ -145,5 +180,15 @@
   &:before {
     color: tint($color-gray-medium, 50%);
     content: '#';
+  }
+}
+
+.entry__content-buttons {
+  display: flex;
+  flex-flow: column;
+  padding-top: 12px;
+
+  @media (min-width: $bp-admin-m) {
+    flex-flow: row;
   }
 }
