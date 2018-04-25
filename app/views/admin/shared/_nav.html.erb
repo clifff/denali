@@ -1,0 +1,57 @@
+<nav class="navbar is-spaced has-shadow" data-controller="nav">
+  <div class="container">
+    <% if @photoblog.header_logo_svg.present? %>
+      <div class="navbar-brand">
+        <a href="<%= root_path %>" class="navbar-item logo" data-turbolinks="false">
+          <%= @photoblog.header_logo_svg.html_safe %>
+        </a>
+        <a role="button" class="navbar-burger" data-action="click->nav#toggle" data-target="nav.burger">
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+        </a>
+      </div>
+    <% end %>
+    <div class="navbar-menu" data-target="nav.menu">
+      <div class="navbar-start">
+        <div class="navbar-item has-dropdown" data-controller="dropdown">
+          <a class="navbar-link" data-action="click->dropdown#toggle">
+            Entries
+          </a>
+          <div class="navbar-dropdown">
+            <a href="<%= new_admin_entry_path %>" class="navbar-item">
+              New entry
+            </a>
+            <hr class="navbar-divider">
+            <a href="<%= admin_entries_path %>" class="navbar-item">
+              Published
+            </a>
+            <a href="<%= queued_admin_entries_path %>" class="navbar-item">
+              Queued
+            </a>
+            <a href="<%= drafts_admin_entries_path %>" class="navbar-item">
+              Drafts
+            </a>
+          </div>
+        </div>
+        <a href="<%= admin_tags_path %>" class="navbar-item">Tags</a>
+        <% if @photoblog.has_search? %>
+        <div class="navbar-item">
+          <%= form_tag(admin_search_path, method: 'get' ) do %>
+            <div class="control has-icons-left">
+              <%= text_field_tag :q, @query || '', placeholder: 'Search', class: 'input' %>
+              <span class="icon is-small is-left">
+                <i class="fas fa-search"></i>
+              </span>
+            </div>
+          <% end %>
+        </div>
+        <% end %>
+      </div>
+      <div class="navbar-end">
+        <a href="<%= admin_settings_path %>" class="navbar-item">Settings</a>
+        <a href="<%= signout_path %>" class="navbar-item" data-turbolinks="false">Sign out</a>
+      </div>
+    </div>
+  </div>
+</nav>

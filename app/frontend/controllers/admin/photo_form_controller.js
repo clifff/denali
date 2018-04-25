@@ -5,7 +5,7 @@ import { Controller } from 'stimulus';
  * @extends Controller
  */
 export default class extends Controller {
-  static targets = ['thumbnail', 'focalmarker', 'position', 'focalx', 'focaly', 'fields', 'fileinput', 'destroy'];
+  static targets = ['thumbnail', 'focalMarker', 'position', 'focalX', 'focalY', 'fields', 'destroy'];
   connect () {
     this.showFocalPoint();
   }
@@ -20,9 +20,9 @@ export default class extends Controller {
     }
 
     const { offsetWidth, offsetHeight } = this.thumbnailTarget;
-    this.focalmarkerTarget.style.top  = `${(offsetHeight * parseFloat(this.data.get('focal-y'))) - 50}px`;
-    this.focalmarkerTarget.style.left = `${(offsetWidth  * parseFloat(this.data.get('focal-x'))) - 50}px`;
-    this.focalmarkerTarget.style.display = 'block';
+    this.focalMarkerTarget.style.top  = `${(offsetHeight * parseFloat(this.data.get('focal-y'))) - 50}px`;
+    this.focalMarkerTarget.style.left = `${(offsetWidth  * parseFloat(this.data.get('focal-x'))) - 50}px`;
+    this.focalMarkerTarget.classList.remove('is-hidden');
   }
 
   /**
@@ -34,13 +34,13 @@ export default class extends Controller {
     event.preventDefault();
     const { top, left } = this.thumbnailTarget.getBoundingClientRect();
     const { offsetWidth, offsetHeight} = this.thumbnailTarget;
-    const focalX = (event.pageX - left)/offsetWidth;
-    const focalY = (event.pageY - top)/offsetHeight;
+    const focalX = (event.pageX - (window.scrollX + left))/offsetWidth;
+    const focalY = (event.pageY - (window.scrollY + top))/offsetHeight;
 
     this.data.set('focal-x', focalX);
     this.data.set('focal-y', focalY);
-    this.focalxTarget.value = focalX;
-    this.focalyTarget.value = focalY;
+    this.focalXTarget.value = focalX;
+    this.focalYTarget.value = focalY;
 
     this.showFocalPoint();
   }
@@ -62,27 +62,6 @@ export default class extends Controller {
   }
 
   /**
-   * Triggers the file input, which is hidden on the page.
-   * @param {Event} event A click event from a button (not the file input).
-   */
-  triggerFileInput (event) {
-    event.preventDefault();
-    this.fileinputTarget.click();
-  }
-
-  /**
-   * Checks if the text entered on the input is an image, and if so, renders
-   * is as a thumbnail.
-   * @param {Event} event A keyup event from a text input.
-   */
-  addFromUrl (event) {
-    const url = event.target.value;
-    if (url.match(/\.jpe?g$/)) {
-      this.setThumbnail(url);
-    }
-  }
-
-  /**
    * Sets the passed url as the src of the thumbnail img tag, and toggles the
    * fields to enter a caption. Marks the form as not empty so we can ask
    * for confirmation before deleting it.
@@ -90,7 +69,7 @@ export default class extends Controller {
    */
   setThumbnail (url) {
     this.thumbnailTarget.src = url;
-    this.fieldsTargets.forEach(element => element.classList.toggle('form__fields--hidden'));
+    this.fieldsTargets.forEach(element => element.classList.toggle('is-hidden'));
     this.data.set('empty', 0);
   }
 

@@ -103,6 +103,10 @@ class Entry < ApplicationRecord
     self.search(search)
   end
 
+  def self.queue_has_published_today?
+    published.first.published_at.in_time_zone(Rails.application.config.time_zone).beginning_of_day == Time.now.in_time_zone(Rails.application.config.time_zone).beginning_of_day
+  end
+
   def is_photo?
     !self.photos_count.blank? && self.photos_count > 0
   end
@@ -164,12 +168,12 @@ class Entry < ApplicationRecord
   end
 
   def publish_date_for_queued
-    days = if Time.now.utc.hour < 12
-      self.position - 1
-    else
+    days = if Entry.queue_has_published_today?
       self.position
+    else
+      self.position - 1
     end
-    Time.now + days.days
+    Time.now.in_time_zone(Rails.application.config.time_zone) + days.days
   end
 
   def related(count = 12)

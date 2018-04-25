@@ -1,0 +1,36 @@
+.awesomplete {
+  width: 100%;
+}
+
+.draggable-handle {
+  &:hover {
+    cursor: grab;
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.draggable-dragging {
+  opacity: 0.5;
+}
+
+.draggable-mirror {
+  cursor: grabbing;
+  z-index: 100;
+}
+
+.draggable--is-dragging,
+.draggable-container--is-dragging {
+  cursor: grabbing;
+}
+
+.turbolinks-progress-bar {
+  height: 2px;
+  background-color: $info;
+}
+
+.is-transparent {
+  opacity: 0;
+}

@@ -4,28 +4,30 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="chrome=1">
   <meta name="viewport" content="width=device-width">
+  <meta name="turbolinks-cache-control" content="no-cache">
+  <%= yield :meta %>
   <title><%= @page_title.nil? ? '' : sanitize("#{@page_title} · ") %><%= @photoblog.name %></title>
-  <%= stylesheet_link_tag 'admin', media: 'all' %>
+  <%= stylesheet_link_tag 'admin', media: 'all', 'data-turbolinks-track': 'reload' %>
   <%= csrf_meta_tags %>
-  <%= javascript_pack_tag 'admin', defer: true %>
+  <%= javascript_pack_tag 'admin', defer: true, 'data-turbolinks-track': 'reload' %>
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.10/css/all.css" integrity="sha384-+d0P83n9kaQMCwj8F4RJB66tzIwOKmrdb46+porD/OvrJ+37WqIM7UoBtwHO6Nlg" crossorigin="anonymous">
 </head>
-<body>
+<body data-controller="notifications" data-action="notify->notifications#add" <% if content_for?(:body_class) %>class="<%= yield :body_class %>"<% end %>>
+  <%= render partial: 'admin/shared/nav' %>
 
-<% if content_for? :nav %>
-  <%= yield :nav %>
-<% else %>
-  <%= render partial: 'partials/admin/nav', locals: { active_nav: 'none' } %>
-<% end %>
-
-<div class="content">
-  <% flash.each do |name, message| -%>
-    <div class="flash flash--<%= name %>" data-controller="flash" data-flash-timeout="5000">
-      <p class="flash__message"><%= message %></p>
-      <a href="#" class="flash__close" data-action="click->flash#close">&times;</a>
+  <section class="section">
+    <div class="container">
+      <%= yield %>
     </div>
-  <% end %>
-  <%= yield %>
-</div>
+  </section>
+
+  <div id="notifications" class="notifications" data-target="notifications.container" data-action="transitionend->notifications#toggle" data-turbolinks-permanent>
+    <% flash.each do |name, message| -%>
+      <div class="notification is-<%= name %> is-transparent" data-target="notifications.notification" data-action="click->notifications#close">
+        <%= message.html_safe %>
+      </div>
+    <% end %>
+  </div>
 
 </body>
 </html>

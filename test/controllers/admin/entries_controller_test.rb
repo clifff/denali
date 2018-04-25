@@ -39,6 +39,14 @@ class Admin::EntriesControllerTest < ActionController::TestCase
     assert_template :tagged
   end
 
+  test 'should render entry page' do
+    get :show, params: { id: @entry.id }
+    assert_not_nil assigns(:entry)
+    assert_response :success
+    assert_template layout: 'layouts/admin'
+    assert_template :show
+  end
+
   test 'should render new entry page' do
     get :new
     assert_response :success
@@ -55,53 +63,19 @@ class Admin::EntriesControllerTest < ActionController::TestCase
   end
 
   test 'should render share entry page' do
-    test_1 = Entry.new(title: 'test 1', status: 'queued', blog_id: @blog.id)
-    test_1.save
-    test_2 = Entry.new(title: 'test 2', status: 'draft', blog_id: @blog.id)
-    test_2.save
-
-    # Test published entry
     get :share, params: { id: @entry.id }
-    assert_not_nil assigns(:entry)
-    assert_response :success
-    assert_template layout: 'layouts/admin'
-    assert_template :share
-    # Test queued entry
-    assert_not_nil assigns(:entry)
-    assert_response :success
-    assert_template layout: 'layouts/admin'
-    assert_template :share
-    # Test draft entry
     assert_not_nil assigns(:entry)
     assert_response :success
     assert_template layout: 'layouts/admin'
     assert_template :share
   end
 
-  test 'should render more options page' do
-    test_1 = Entry.new(title: 'test 1', status: 'queued', blog_id: @blog.id)
-    test_1.save
-    test_2 = Entry.new(title: 'test 2', status: 'draft', blog_id: @blog.id)
-    test_2.save
-
-    # Test published entry
-    get :more, params: { id: @entry.id }
+  test 'should render crops page' do
+    get :crops, params: { id: @entry.id }
     assert_not_nil assigns(:entry)
     assert_response :success
     assert_template layout: 'layouts/admin'
-    assert_template :more
-    # Test queued entry
-    get :more, params: { id: test_1.id }
-    assert_not_nil assigns(:entry)
-    assert_response :success
-    assert_template layout: 'layouts/admin'
-    assert_template :more
-    # Test draft entry
-    get :more, params: { id: test_2.id }
-    assert_not_nil assigns(:entry)
-    assert_response :success
-    assert_template layout: 'layouts/admin'
-    assert_template :more
+    assert_template :crops
   end
 
   test 'should render photo fields' do
@@ -152,7 +126,7 @@ class Admin::EntriesControllerTest < ActionController::TestCase
   test 'should update entries' do
     entry = entries(:peppers)
     patch :update, params: { id: entry.id, entry: { id: entry.id } }
-    assert_redirected_to admin_entries_path
+    assert_redirected_to admin_entry_path(entry)
   end
 
   test 'update should change modified_at' do
@@ -182,5 +156,12 @@ class Admin::EntriesControllerTest < ActionController::TestCase
 
     post :top, params: { id: entry.id }
     assert_equal assigns(:entry).position, 1
+  end
+
+  test 'should render organize queue page' do
+    get :organize_queue
+    assert_response :success
+    assert_template layout: 'layouts/admin'
+    assert_template :organize_queue
   end
 end

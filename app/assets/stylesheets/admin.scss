@@ -1,17 +1,12 @@
+@import 'admin/base/variables';
 @import 'vendors/reset';
 @import 'awesomplete/awesomplete';
-
-@import 'base/variables';
-@import 'base/functions';
-@import 'base/mixins';
-@import 'admin/base/base';
-
-@import 'blocks/button';
-@import 'blocks/flash';
-
-@import 'admin/blocks/content';
-@import 'admin/blocks/entry';
-@import 'admin/blocks/form';
-@import 'admin/blocks/nav';
-@import 'admin/blocks/pagination';
-@import 'admin/blocks/table';
+@import 'bulma/bulma';
+@import 'admin/base/misc';
+@import 'admin/blocks/logo';
+@import 'admin/blocks/card';
+@import 'admin/blocks/share_image';
+@import 'admin/blocks/photo_form';
+@import 'admin/blocks/modal';
+@import 'admin/blocks/notifications';
+@import 'admin/blocks/queue';

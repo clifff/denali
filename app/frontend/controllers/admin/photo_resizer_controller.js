@@ -24,20 +24,6 @@ export default class extends Controller {
     const url = this.formTarget.action;
     let size = this.selectTarget.value;
 
-    if (size === '') {
-      return;
-    }
-
-    if (size === 'other') {
-      size = parseInt(window.prompt('What width, in pixels, would you like?'));
-
-      if (isNaN(size)) {
-        this.formTarget.reset();
-        window.alert('That’s not a valid size!');
-        return;
-      }
-    }
-
     const fetchOpts = {
       method: 'POST',
       headers: new Headers({

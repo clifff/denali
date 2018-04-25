@@ -12,23 +12,26 @@ class SessionsController < ApplicationController
 
     if auth_hash.present?
       logger.info "#{auth_hash['info']['name']} (#{auth_hash['info']['email']}) signed in"
-      flash[:notice] = "Welcome, #{auth_hash['info']['name']}!"
+      flash[:success] = "Welcome back, #{auth_hash['info']['first_name']}!"
       user = User.from_omniauth(auth_hash)
       session[:user_id] = user.id
       url = session[:original_url] || admin_entries_path
       session[:original_url] = nil
       redirect_to url
     else
-      redirect_to signin_path, alert: 'There was a problem signing you in.'
+      flash[:warning] = 'There was a problem signing you in.'
+      redirect_to signin_path
     end
   end
 
   def failure
-    redirect_to signin_path, alert: "There was a problem signing you in: #{params[:message]}."
+    flash[:warning] = "There was a problem signing you in: #{params[:message]}."
+    redirect_to signin_path
   end
 
   def destroy
     session[:current_user] = nil
-    redirect_to signin_path, notice: 'You have been signed out.'
+    flash[:success] = 'You have been signed out.'
+    redirect_to signin_path
   end
 end

@@ -1,18 +1,25 @@
-<% content_for :nav do %>
-  <%= render partial: 'partials/admin/nav', locals: { active_nav: 'search' } %>
-<% end %>
-
-<%= form_tag(admin_search_path, method: 'get', class: 'form') do %>
-  <%= text_field_tag :q, @query || '', placeholder: "Search…", class: 'form__input' %>
-<% end %>
-
 <% if @query.present? %>
+  <h1 class="title is-size-5-mobile">Search results for “<%= @query %>”</h1>
+  <h2 class="subtitle is-size-6-mobile"><%= pluralize_with_delimiter 'entry', @total_count %></h2>
+  <hr class="hr">
   <% if @entries.size == 0 %>
-    <p class="content__message">No results found for “<%= @query %>”.</p>
+    <article class="message is-info">
+      <div class="message-body">
+        No results found for “<%= @query %>”.
+      </div>
+    </article>
   <% else %>
-    <ol class="entry__list">
+    <% cache "admin/entries/search/#{@query}/page/#{@page}/#{@photoblog.id}/#{@photoblog.updated_at.to_i}" do %>
       <%= render partial: 'entry', collection: @entries %>
-    </ol>
-    <%= paginate @entries %>
+    <% end %>
+    <%= paginate @entries, views_prefix: 'admin', outer_window: 1, window: 1 %>
   <% end %>
+<% else %>
+  <h1 class="title is-size-5-mobile">Search</h1>
+  <hr class="hr">
+  <article class="message is-info">
+    <div class="message-body">
+      You left the search field blank.
+    </div>
+  </article>
 <% end %>

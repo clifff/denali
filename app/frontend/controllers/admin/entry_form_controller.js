@@ -1,7 +1,7 @@
 import { Controller } from 'stimulus';
 import { fetchStatus, fetchText } from '../../lib/utils';
 import $ from 'jquery';
-import { Sortable } from '@shopify/draggable';
+import { Sortable, Plugins } from '@shopify/draggable';
 import Awesomplete from 'awesomplete';
 
 /**
@@ -26,14 +26,17 @@ export default class extends Controller {
       }
     });
 
-    new Sortable(this.photosTarget, {
+    this.sortablePhotos = new Sortable(this.photosTarget, {
       delay: 100,
       classes: {
-        'source:dragging': 'form__photo--dragging',
-        'mirror': 'form__photo--mirror'
+        'source:dragging': 'draggable-dragging',
+        'mirror': 'draggable-mirror'
       },
-      handle: '.draggable-handle'
+      handle: '.draggable-handle',
+      plugins: [Plugins.SwapAnimation]
     });
+
+    this.sortablePhotos.on('sortable:start', event => this.startSort(event));
   }
 
   /**
@@ -58,6 +61,18 @@ export default class extends Controller {
       .then(fetchStatus)
       .then(fetchText)
       .then(html => $(this.photosTarget).append(html));
+  }
+
+  /**
+   * Handles the start of a sorting event, hardcoding the size of the dragged
+   * element so it doesn't look weird while being dragged.
+   * Sortable events docs: https://github.com/Shopify/draggable/tree/master/src/Sortable/SortableEvent
+   * @param {Event} event A sortable:start event.
+   */
+  startSort (event) {
+    let mirror = event.data.dragEvent.data.mirror;
+    let originalWidth = event.data.dragEvent.data.sourceContainer.clientWidth;
+    mirror.style.width = `${originalWidth}px`;
   }
 
   /**

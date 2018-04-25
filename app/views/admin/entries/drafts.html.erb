@@ -1,13 +1,17 @@
-<% content_for :nav do %>
-  <%= render partial: 'partials/admin/nav', locals: { active_nav: 'drafts' } %>
+<h1 class="title is-size-5-mobile">Drafts</h1>
+<% cache "admin/subtitles/drafts/#{@photoblog.id}/#{@photoblog.updated_at.to_i}" do %>
+  <h2 class="subtitle is-size-6-mobile"><%= pluralize_with_delimiter 'entry', Entry.drafted.count %></h2>
 <% end %>
-
-
+<hr class="hr">
 <% if @entries.size == 0 %>
-  <p class="content__message">You don’t have any drafts. Why don’t you <a href="<%= new_admin_entry_path %>">write one</a>?</p>
+  <article class="message is-info">
+    <div class="message-body">
+      You don’t have any drafts. Why don’t you <a href="<%= new_admin_entry_path %>">write one</a>?
+    </div>
+  </article>
 <% else %>
-  <ol class="entry-list">
-    <%= render partial: 'entry', collection: @entries %>
-  </ol>
-  <%= paginate @entries %>
+<% cache "admin/entries/drafts/page/#{@page}/#{@photoblog.id}/#{@photoblog.updated_at.to_i}" do %>
+  <%= render partial: 'entry', collection: @entries %>
+<% end %>
+  <%= paginate @entries, views_prefix: 'admin', outer_window: 1, window: 1 %>
 <% end %>

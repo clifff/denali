@@ -1,12 +1,17 @@
-<% content_for :nav do %>
-  <%= render partial: 'partials/admin/nav', locals: { active_nav: 'tagged' } %>
+<h1 class="title is-size-5-mobile"><%= @tag_list.first %></h1>
+<% cache "admin/subtitles/tagged/#{@tag_list.first}/#{@photoblog.id}/#{@photoblog.updated_at.to_i}" do %>
+  <h2 class="subtitle is-size-6-mobile"><%= pluralize_with_delimiter 'entry', Entry.tagged_with(@tag_list.first).count %></h2>
 <% end %>
-
+<hr class="hr">
 <% if @entries.size == 0 %>
-  <p class="content__message">You haven’t published any entries. Why don’t you <a href="<%= new_admin_entry_path %>">write one</a>?</p>
+  <article class="message is-info">
+    <div class="message-body">
+      You haven’t published any entries. Why don’t you <a href="<%= new_admin_entry_path %>">write one</a>?
+    </div>
+  </article>
 <% else %>
-  <ol class="entry__list">
+  <% cache "admin/entries/tagged/#{@tag_list.first}/page/#{@page}/#{@photoblog.id}/#{@photoblog.updated_at.to_i}" do %>
     <%= render partial: 'entry', collection: @entries %>
-  </ol>
-  <%= paginate @entries %>
+  <% end %>
+  <%= paginate @entries, views_prefix: 'admin', outer_window: 1, window: 1 %>
 <% end %>

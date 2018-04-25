@@ -53,23 +53,65 @@ entry_list_square:
   <<: *entry_list
   square: Yes
 admin_entry:
-  <<: *entry
-  sizes:
-    - "(min-width: 840px) 840px"
-    - 100vw
-admin_edit:
-  src: 300
+  src: 1152
   srcset:
-    - 300
-    - 516
-    - 600
-    - 626
-    - 900
-    - 1056
-    - 1412
+    - 544
+    - 654
+    - 1098
+    - 981
+    - 1440
+    - 1952
+    - 960
+    - 1920
+    - 1152
+    - 2304
+    - 1344
+    - 2688
   sizes:
-    - "(min-width: 800px) 300px"
-    - calc(100vw - 60px)
+    - "(min-width: 1472px) 1344px"
+    - "(min-width: 1280px) 1152px"
+    - "(min-width: 1088px) 960px"
+    - calc(100vw - 3rem)
+admin_edit:
+  src: 940
+  srcset:
+    - 544
+    - 654
+    - 1098
+    - 1440
+    - 780
+    - 1560
+    - 940
+    - 1880
+    - 1100
+    - 2200
+  sizes:
+    - "(min-width: 1472px) 1100px"
+    - "(min-width: 1280px) 940px"
+    - "(min-width: 1088px) 780px"
+    - "(min-width: 769px) calc(((100vw - 4.5rem)/6) * 5)"
+    - calc(100vw - 3rem)
+admin_queue:
+  src: 490
+  srcset:
+    - 224
+    - 280
+    - 477
+    - 672
+    - 440
+    - 168
+    - 336
+    - 207
+    - 414
+    - 245
+    - 490
+  sizes:
+    - "(min-width: 1472px) 245px"
+    - "(min-width: 1280px) 207px"
+    - "(min-width: 1088px) 168px"
+    - "(min-width: 769px) calc(((100vw - 3rem)/4) - 1.5rem)"
+    - calc((100vw - 3rem)/2 - 1.5rem)
+  square: Yes
 map:
   src: 300
   srcset:

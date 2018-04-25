@@ -11,13 +11,15 @@ Rails.application.routes.draw do
     get '/entries/search'             => 'entries#search', :as => :search
     get '/entries/edit'               => 'entries#edit'
     get '/entries/share'              => 'entries#share'
+    get '/entries/queued/organize'    => 'entries#organize_queue'
+    post '/entries/queued/update'     => 'entries#update_queue'
     get 'settings'                    => 'blogs#edit'
     patch 'settings/update'           => 'blogs#update'
 
-    resources :entries, only: [:index, :new, :create, :edit, :update, :destroy], concerns: :paginatable do
+    resources :entries, concerns: :paginatable do
       member do
-        get 'more'
         get 'share'
+        get 'crops'
         post 'resize_photos'
         patch 'publish'
         patch 'queue'
@@ -29,10 +31,11 @@ Rails.application.routes.draw do
         post 'instagram'
         post 'twitter'
         post 'facebook'
-        post 'geotag'
+        post 'pinterest'
+        post 'flickr'
+        post 'tumblr'
         post 'invalidate'
-        post 'annotate'
-        post 'palette'
+        post 'refresh_metadata'
       end
       collection do
         get 'queued'

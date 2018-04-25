@@ -1,10 +1,11 @@
 class Admin::EntriesController < AdminController
   include TagList
 
-  before_action :set_entry, only: [:show, :edit, :update, :destroy, :publish, :queue, :draft, :up, :down, :top, :bottom, :more, :share, :instagram, :facebook, :twitter, :geotag, :invalidate, :palette, :annotate, :resize_photos]
+  before_action :set_entry, only: [:show, :edit, :update, :destroy, :publish, :queue, :draft, :up, :down, :top, :bottom, :share, :crops, :instagram, :facebook, :twitter, :pinterest, :flickr, :tumblr, :invalidate, :refresh_metadata, :resize_photos]
   before_action :get_tags, only: [:new, :edit, :create, :update]
   before_action :load_tags, :load_tagged_entries, only: [:tagged]
-  before_action :set_redirect_url, only: [:edit, :new, :up, :down, :top, :bottom, :more]
+  before_action :set_redirect_url, only: [:up, :down, :top, :bottom, :instagram, :facebook, :twitter, :pinterest, :flickr, :tumblr, :invalidate, :refresh_metadata]
+  before_action :set_max_age
   after_action :update_position, only: [:create]
   after_action :geocode_photos, only: [:create, :update]
   after_action :annotate_photos, only: [:create, :update]
@@ -38,6 +39,11 @@ class Admin::EntriesController < AdminController
     @page_title = "Entries tagged \"#{@tag_list.first}\""
   end
 
+  # GET /admin/entries/:id
+  def show
+    @page_title = @entry.plain_title
+  end
+
   # GET /admin/entries/new
   def new
     @entry = @photoblog.entries.new
@@ -55,50 +61,44 @@ class Admin::EntriesController < AdminController
     if @query.present?
       @page_title = "Search results for \"#{@query}\""
       results = Entry.full_search(@query, @page, @count)
-      total_count = results.results.total
-      @entries = Kaminari.paginate_array(results.records.includes(:photos), total_count: total_count).page(@page).per(@count)
+      @total_count = results.results.total
+      @entries = Kaminari.paginate_array(results.records.includes(:photos), total_count: @total_count).page(@page).per(@count)
     end
   end
 
   # GET /admin/entries/1/edit
   def edit
     @page_title = "Editing “#{@entry.title}”"
-    @max_age = ENV['config_entry_caching_minutes'].try(:to_i) || ENV['config_caching_minutes'].try(:to_i) || 5
-  end
-
-  def share
-    @page_title = "Share “#{@entry.title}”"
-    @sizes = [1200]
   end
 
   # PATCH /admin/entries/1/publish
   def publish
     if @entry.publish
-      flash[:notice] = 'Your entry was published!'
+      flash[:success] = 'Your entry was published!'
     else
-      flash[:alert] = 'Your entry couldn’t be published…'
+      flash[:warning] = 'Your entry couldn’t be published…'
     end
-    redirect_to session[:redirect_url] || admin_entries_path
+    redirect_to admin_entries_path
   end
 
   # PATCH /admin/entries/1/queue
   def queue
     if @entry.queue
-      flash[:notice] = 'Your entry was queued!'
+      flash[:success] = 'Your entry was sent to the queue.'
     else
-      flash[:alert] = 'Your entry couldn’t be queued…'
+      flash[:warning] = 'Your entry couldn’t be queued…'
     end
-    redirect_to session[:redirect_url] || admin_entries_path
+    redirect_to queued_admin_entries_path
   end
 
   # PATCH /admin/entries/1/draft
   def draft
     if @entry.draft
-      flash[:notice] = 'Your entry was saved as draft!'
+      flash[:success] = 'Your entry was moved to the drafts.'
     else
-      flash[:alert] = 'Your entry couldn’t be saved as draft…'
+      flash[:warning] = 'Your entry couldn’t be moved to the drafts…'
     end
-    redirect_to session[:redirect_url] || admin_entries_path
+    redirect_to drafts_admin_entries_path
   end
 
   # POST /admin/entries
@@ -108,10 +108,10 @@ class Admin::EntriesController < AdminController
     @entry.blog = @photoblog
     respond_to do |format|
       if @entry.save
-        flash[:notice] = 'Your entry was saved!'
+        flash[:success] = "Your new entry was saved! <a href=\"#{admin_entry_path(@entry)}\">Check it out.</a>"
         format.html { redirect_to new_admin_entry_path }
       else
-        flash[:alert] = 'Your entry couldn’t be saved…'
+        flash[:warning] = 'Your entry couldn’t be saved…'
         format.html { render :new }
       end
     end
@@ -123,47 +123,73 @@ class Admin::EntriesController < AdminController
       @entry.modified_at = Time.now if @entry.is_published?
       if @entry.update(entry_params)
         logger.info "Entry #{@entry.id} was updated."
-        flash[:notice] = 'Your entry was updated!'
-        format.html { redirect_to session[:redirect_url] || admin_entries_path }
+        flash[:success] = 'Your entry has been updated!'
+        format.html { redirect_to session[:redirect_url] || admin_entry_path(@entry) }
       else
-        flash[:alert] = 'Your entry couldn’t be updated…'
+        flash[:warning] = 'Your entry couldn’t be updated…'
         format.html { render :edit }
       end
     end
-  end
-
-  def more
-    @page_title = "More options for “#{@entry.title}”"
-    @max_age = ENV['config_entry_caching_minutes'].try(:to_i) || ENV['config_caching_minutes'].try(:to_i) || 5
   end
 
   # DELETE /admin/entries/1
   def destroy
     @entry.destroy
     respond_to do |format|
-      flash[:notice] = 'Your entry was deleted!'
-      format.html { redirect_to admin_entries_path }
+      flash[:danger] = 'Your entry was deleted forever.'
+      format.html { redirect_to session[:redirect_url] || admin_entries_path }
     end
   end
 
   def up
     @entry.move_higher
+    flash[:success] = 'Your entry was moved up in the queue.'
     respond_to_reposition
   end
 
   def down
     @entry.move_lower
+    flash[:success] = 'Your entry was moved down in the queue.'
     respond_to_reposition
   end
 
   def top
     @entry.move_to_top
+    flash[:success] = 'Your entry was moved to the top of the queue.'
     respond_to_reposition
   end
 
   def bottom
     @entry.move_to_bottom
+    flash[:success] = 'Your entry was moved to the bottom of the queue.'
     respond_to_reposition
+  end
+
+  def organize_queue
+    @page_title = 'Organize queue'
+  end
+
+  def update_queue
+    entry_ids = params[:entry_ids]
+    entries = Entry.where(id: entry_ids)
+    position = 1
+    entry_ids.each do |id|
+      entry = entries.find { |e| e.id == id }
+      if entry.is_queued?
+        entry.position = position
+        entry.save
+        position += 1
+      end
+    end
+    respond_to do |format|
+      format.json {
+        response = {
+          status: 'success',
+          message: 'The changes you’ve made to the queue have been saved!'
+        }
+        render json: response
+      }
+    end
   end
 
   def photo
@@ -176,50 +202,150 @@ class Admin::EntriesController < AdminController
     end
   end
 
+  def share
+    respond_to do |format|
+      format.html {
+        if params[:modal]
+          render layout: nil
+        else
+          render
+        end
+      }
+    end
+  end
+
+  def crops
+    @sizes = {
+      'Sizes': [
+        ['Thumbnail 100', 100],
+        ['Small 240', 240],
+        ['Small 320', 320],
+        ['Medium 500', 500],
+        ['Medium 640', 640],
+        ['Medium 800', 800],
+        ['Large 1024', 1024],
+        ['Large 1200', 1200],
+        ['Large 1600', 1600],
+        ['Large 2048', 2048],
+        ['Original', 'original']
+      ],
+      'Instagram': [['Feed', 'instagram_feed'], ['Story', 'instagram_story']]
+    }
+    respond_to do |format|
+      format.html {
+        if params[:modal]
+          render layout: nil
+        else
+          render
+        end
+      }
+    end
+  end
+
   def instagram
     raise ActiveRecord::RecordNotFound unless @entry.is_published? && @entry.is_photo?
     InstagramJob.perform_later(@entry)
-    flash[:notice] = 'Your entry was sent to your Instagram queue in Buffer!'
-    redirect_to share_admin_entry_path(@entry)
+    @message = 'Your entry was sent to your Instagram queue in Buffer.'
+    respond_to do |format|
+      format.html {
+        flash[:success] = @message
+        redirect_to session[:redirect_url] || admin_entry_path(@entry)
+      }
+      format.js { render :notify }
+    end
   end
 
   def twitter
     raise ActiveRecord::RecordNotFound unless @entry.is_published? && @entry.is_photo?
     TwitterJob.perform_later(@entry)
-    flash[:notice] = 'Your entry was sent to your Twitter queue in Buffer!'
-    redirect_to share_admin_entry_path(@entry)
+    @message = 'Your entry was sent to your Twitter queue in Buffer.'
+    respond_to do |format|
+      format.html {
+        flash[:success] = @message
+        redirect_to session[:redirect_url] || admin_entry_path(@entry)
+      }
+      format.js { render :notify }
+    end
   end
 
   def facebook
     raise ActiveRecord::RecordNotFound unless @entry.is_published? && @entry.is_photo?
     FacebookJob.perform_later(@entry)
-    flash[:notice] = 'Your entry was sent to your Facebook queue in Buffer!'
-    redirect_to share_admin_entry_path(@entry)
+    @message = 'Your entry was sent to your Facebook queue in Buffer.'
+    respond_to do |format|
+      format.html {
+        flash[:success] = @message
+        redirect_to session[:redirect_url] || admin_entry_path(@entry)
+      }
+      format.js { render :notify }
+    end
   end
 
-  def geotag
-    @entry.photos.map(&:geocode)
-    flash[:notice] = 'Your entry is currently being geotagged. This may take a minute.'
-    redirect_to more_admin_entry_path(@entry)
+  def pinterest
+    raise ActiveRecord::RecordNotFound unless @entry.is_published? && @entry.is_photo?
+    PinterestJob.perform_later(@entry)
+    @message = 'Your entry was sent to Pinterest.'
+    respond_to do |format|
+      format.html {
+        flash[:success] = @message
+        redirect_to session[:redirect_url] || admin_entry_path(@entry)
+      }
+      format.js { render :notify }
+    end
+  end
+
+  def flickr
+    raise ActiveRecord::RecordNotFound unless @entry.is_published? && @entry.is_photo?
+    FlickrJob.perform_later(@entry)
+    @message = 'Your entry was sent to Flickr.'
+    respond_to do |format|
+      format.html {
+        flash[:success] = @message
+        redirect_to session[:redirect_url] || admin_entry_path(@entry)
+      }
+      format.js { render :notify }
+    end
+  end
+
+  def tumblr
+    raise ActiveRecord::RecordNotFound unless @entry.is_published? && @entry.is_photo?
+    TumblrJob.perform_later(@entry)
+    @message = 'Your entry was sent to your Tumblr queue.'
+    respond_to do |format|
+      format.html {
+        flash[:success] = @message
+        redirect_to session[:redirect_url] || admin_entry_path(@entry)
+      }
+      format.js { render :notify }
+    end
   end
 
   def invalidate
     @entry.touch
     CloudfrontInvalidationJob.perform_later(@entry)
-    flash[:notice] = 'Your entry is currently being invalidated in CloudFront. This may take a few minutes.'
-    redirect_to more_admin_entry_path(@entry)
+    @message = 'Your entry is being cleared from cache. This may take a few moments.'
+    respond_to do |format|
+      format.html {
+        flash[:success] = @message
+        redirect_to session[:redirect_url] || admin_entry_path(@entry)
+      }
+      format.js { render :notify }
+    end
   end
 
-  def palette
-    @entry.photos.map(&:update_palette)
-    flash[:notice] = 'Your palette is currently being updated. This may take a minute.'
-    redirect_to more_admin_entry_path(@entry)
-  end
-
-  def annotate
+  def refresh_metadata
+    @entry.photos.map(&:geocode)
     @entry.photos.map(&:annotate)
-    flash[:notice] = 'Annotation data is currently being updated. This may take a minute.'
-    redirect_to more_admin_entry_path(@entry)
+    @entry.photos.map(&:update_palette)
+    CloudfrontInvalidationJob.perform_later(@entry)
+    @message = 'Your entry’s metadata is being updated. This may take a few moments.'
+    respond_to do |format|
+      format.html {
+        flash[:success] = @message
+        redirect_to session[:redirect_url] || admin_entry_path(@entry)
+      }
+      format.js { render :notify }
+    end
   end
 
   def resize_photos
@@ -256,7 +382,7 @@ class Admin::EntriesController < AdminController
 
     def respond_to_reposition
       respond_to do |format|
-        format.html { redirect_to session[:redirect_url] || admin_entries_path }
+        format.html { redirect_to session[:redirect_url] || admin_entry_path(@entry) }
         format.json {
           response = {
             status: 200,
@@ -270,6 +396,10 @@ class Admin::EntriesController < AdminController
 
     def set_redirect_url
       session[:redirect_url] = request.referer
+    end
+
+    def set_max_age
+      @max_age = ENV['config_entry_caching_minutes'].try(:to_i) || ENV['config_caching_minutes'].try(:to_i) || 5
     end
 
     def enqueue_invalidation

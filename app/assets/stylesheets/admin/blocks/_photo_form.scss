@@ -1,0 +1,52 @@
+.photo-form {
+  align-items: stretch;
+  flex-flow: column nowrap;
+
+  @media (min-width: $tablet) {
+    flex-flow: row nowrap;
+  }
+}
+
+.photo-form__focal-marker {
+  border-radius: 100%;
+  border: 4px solid currentColor;
+  box-shadow: 0 0 2px 1px transparentize(black, 0.2), inset 0 0 2px 1px transparentize(black, 0.5);
+  color: white;
+  display: block;
+  height: 100px;
+  opacity: 0.9;
+  pointer-events: none;
+  position: absolute;
+  width: 100px;
+  z-index: 1;
+}
+
+.photo-form__image-container {
+  @media (hover: hover) {
+    .photo-form__focal-marker {
+      display: none;
+    }
+
+    &:hover {
+      .photo-form__focal-marker {
+        display: block;
+      }
+    }
+  }
+}
+
+.photo-form__controls {
+  align-items: center;
+  display: flex;
+  flex-flow: row-reverse nowrap;
+  justify-content: space-between;
+
+  @media (max-width: $tablet) {
+    margin-left: 0;
+    margin-top: 1rem;
+  }
+
+  @media (min-width: $tablet) {
+    flex-flow: column nowrap;
+  }
+}
